@@ -1,0 +1,152 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/MinLL/SkyrimNet-Plugins/main/schemas/action.schema.json",
+  "title": "SkyrimNet Action",
+  "description": "A YAML definition mapping an NPC-performable behavior to a Papyrus script function. Shape matches SkyrimNet's WORKFLOW_ACTIONS.md. This schema is syntactic only — semantic validation (real questEditorId, real script, real function signature, valid decorator names) runs inside the dashboard via SkyrimNet's own validate_custom_action at publish time.",
+  "type": "object",
+  "required": [
+    "name",
+    "description",
+    "questEditorId",
+    "scriptName",
+    "executionFunctionName",
+    "parameterMapping",
+    "eligibilityRules"
+  ],
+  "properties": {
+    "name": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9_]*$",
+      "minLength": 1,
+      "description": "PascalCase or snake_case identifier for this action."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 10,
+      "description": "Instructions to the action LLM: when to pick this action and when NOT to. Inja template variables like {{ player.name }} are allowed."
+    },
+    "questEditorId": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Editor ID of the quest hosting the Papyrus script (e.g. 'SkyrimNetQuest')."
+    },
+    "scriptName": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Name of the Papyrus script bound to the quest (e.g. 'SkyrimNetInternal')."
+    },
+    "executionFunctionName": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Exact function name to call on the script (e.g. 'OpenTrade_Execute')."
+    },
+    "parameterMapping": {
+      "type": "array",
+      "description": "Ordered list matching the Papyrus function's parameters. Empty array is valid for zero-parameter functions.",
+      "items": {
+        "type": "object",
+        "required": ["type"],
+        "properties": {
+          "type": {
+            "enum": ["speaker", "dynamic", "static"],
+            "description": "speaker = current NPC, dynamic = LLM-chosen value, static = hard-coded value"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Required for dynamic parameters. Identifier the LLM sees."
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Required for dynamic parameters. Tells the LLM what to put here."
+          },
+          "value": {
+            "type": ["string", "number", "boolean"],
+            "description": "Required for static parameters. Scalar value passed to the Papyrus function."
+          }
+        },
+        "allOf": [
+          {
+            "if": { "properties": { "type": { "const": "static" } }, "required": ["type"] },
+            "then": { "required": ["value"] }
+          },
+          {
+            "if": { "properties": { "type": { "const": "dynamic" } }, "required": ["type"] },
+            "then": { "required": ["name", "description"] }
+          }
+        ]
+      }
+    },
+    "eligibilityRules": {
+      "type": "array",
+      "description": "Rules combined with AND. Each rule's conditions combine with its logicalOperator. A rule with required=false is ignored entirely (SkyrimNet quirk).",
+      "items": {
+        "type": "object",
+        "required": ["conditions", "logicalOperator", "required"],
+        "properties": {
+          "conditions": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": ["decoratorName", "arguments", "comparisonOperator", "expectedValue"],
+              "properties": {
+                "decoratorName": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Name of a registered SkyrimNet decorator function (e.g. 'is_in_faction', 'get_actor_value')."
+                },
+                "arguments": {
+                  "type": "array",
+                  "items": { "type": ["string", "number", "boolean"] },
+                  "description": "Arguments to the decorator. Use the token 'currentActor' or 'player' for actor references, not '{{ actor.UUID }}'."
+                },
+                "comparisonOperator": {
+                  "enum": ["==", "!=", ">", "<", ">=", "<="]
+                },
+                "expectedValue": {
+                  "type": ["string", "number", "boolean"],
+                  "description": "Scalar value the decorator's return is compared against."
+                }
+              }
+            }
+          },
+          "logicalOperator": {
+            "enum": ["AND", "OR"],
+            "description": "Combines the conditions inside this rule."
+          },
+          "required": {
+            "type": "boolean",
+            "description": "Must be true for the rule to take effect. false means SkyrimNet ignores the rule entirely (documented quirk, not a typo)."
+          }
+        }
+      }
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9][a-z0-9-]{0,30}$"
+      },
+      "maxItems": 10,
+      "description": "Optional tags used by SkyrimNet for internal action grouping. Not to be confused with manifest.json tags."
+    },
+    "eventString": {
+      "type": "string",
+      "description": "Optional Inja template describing what happens, used for logs and NPC memory. Supports {{ actor.name }}, {{ player.name }}, {{ action_name }}, {{ param_name }}."
+    },
+    "isShortLived": {
+      "type": "boolean",
+      "description": "If true, the action does not persist in NPC memory after execution."
+    },
+    "enabled": {
+      "type": "boolean",
+      "description": "If false, SkyrimNet skips this action entirely. Default true."
+    },
+    "defaultPriority": {
+      "type": "integer",
+      "description": "Higher values mean the action LLM is more likely to pick this action when multiple are eligible."
+    }
+  }
+}

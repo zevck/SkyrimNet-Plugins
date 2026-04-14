@@ -1,2 +1,52 @@
-# SkyrimNet-Plugins
-Community Plugins for SkyrimNet
+# SkyrimNet Plugins
+
+Community marketplace for [SkyrimNet](https://github.com/MinLL/SkyrimNet) plugins.
+
+A **plugin** is a bundle containing any combination of:
+
+- **Prompts** (`.prompt`) — text files that shape how NPCs perceive the world or behave in specific situations
+- **Triggers** (`.yaml`) — YAML rules that react to game events (spell casts, combat, mod events, etc.) and generate dialogue, narration, diary entries, or bio updates
+- **Actions** (`.yaml`) — YAML definitions that let NPCs execute Papyrus mod functions in response to dialogue
+
+Plugins often work together as a bundle (e.g. an action paired with a trigger that invokes it and a prompt that teaches NPCs when to use it), but any subset is valid — a pure prompt pack or a trigger-only submission is perfectly fine.
+
+## Browsing and installing
+
+Use the **Plugins** page in your in-game SkyrimNet dashboard to browse and install from this repo. No GitHub account required for browsing.
+
+## Publishing a plugin
+
+The easiest way to publish is from the dashboard's **Publish** page. It handles everything — authenticating with GitHub via Device Flow, forking this repo, writing files to the correct location, and opening a pull request — so you never need to touch git.
+
+If you want to publish manually, see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Repository structure
+
+```
+plugins/
+  {github-user}/
+    {plugin-slug}/
+      manifest.json           # required metadata
+      triggers/*.yaml         # optional
+      actions/*.yaml          # optional
+      prompts/*.prompt        # optional
+```
+
+Each plugin lives in its own directory under the author's GitHub username. The `manifest.json` describes the plugin and is required; the three content subdirectories are all optional.
+
+## Review process
+
+Submissions go through one of two flows depending on what they contain:
+
+- **Trigger or prompt content only** — reviewed automatically by a GitHub Models agent checking for spam, offensive content, injection attempts, and accuracy of the NSFW flag. Approved submissions auto-merge.
+- **Any actions included** — reviewed manually by a SkyrimNet developer or trusted community member. Manual review can take up to a week. This is not a trust issue — Papyrus has no access control, and verifying an action is safe against save corruption requires human judgment.
+
+First-time contributors always get one human review regardless of content type.
+
+## NSFW content
+
+NSFW plugins are allowed and live in a gated section of the dashboard (off by default). Every manifest must declare `"nsfw": true|false` accurately — mismatches are an automatic reject reason.
+
+## License
+
+To be decided.

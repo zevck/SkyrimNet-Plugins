@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/MinLL/SkyrimNet-Plugins/main/schemas/trigger.schema.json",
+  "title": "SkyrimNet Trigger",
+  "description": "A YAML rule that watches for a game event and emits a response (dialogue, narration, diary entry, etc.). Shape matches SkyrimNet's WORKFLOW_TRIGGERS.md. This schema is syntactic only — semantic validation (real eventType names, valid schemaCondition field paths for the declared eventType) runs inside the dashboard via SkyrimNet's own validate_custom_trigger at publish time.",
+  "type": "object",
+  "required": ["name", "description", "eventCriteria", "response"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "minLength": 1,
+      "description": "snake_case identifier for this trigger. Must start with a lowercase letter."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 5,
+      "description": "Human-readable description of when this trigger fires and what it does."
+    },
+    "eventCriteria": {
+      "type": "object",
+      "required": ["eventType"],
+      "additionalProperties": false,
+      "properties": {
+        "eventType": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Game event type. Common values from SkyrimNet: spell_cast, active_effect, hit, combat, death, activation, equip, sleep_start, sleep_stop, book_read, quest_stage, quest_start_stop, location_change, container_changed, enter_bleedout, animation_event, mod_event, crime, dragon_soul, dialogue, or '*' for wildcard. SkyrimNet may add more — this field is not restricted to an enum for forward compatibility. Real validity is checked by validate_custom_trigger at publish time."
+        },
+        "schemaConditions": {
+          "type": "array",
+          "description": "Filters on the event's extraData fields. All conditions must pass (AND).",
+          "items": {
+            "type": "object",
+            "required": ["fieldPath", "operator", "value"],
+            "additionalProperties": false,
+            "properties": {
+              "fieldPath": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Dot-path into the event's extraData (e.g. 'event_name', 'sender_form_id', 'num_arg'). Available paths vary by eventType."
+              },
+              "operator": {
+                "enum": [
+                  "equals", "not_equals",
+                  "contains", "not_contains",
+                  "greater_than", "less_than",
+                  "greater_than_or_equal", "less_than_or_equal",
+                  "starts_with", "ends_with",
+                  "matches_regex"
+                ],
+                "description": "Comparison operator. Numeric operators require numeric values; string operators require string values."
+              },
+              "value": {
+                "type": ["string", "number", "boolean"],
+                "description": "Scalar value to compare against. Inja template strings like '{{ player_name }}' are allowed."
+              },
+              "caseSensitive": {
+                "type": "boolean",
+                "description": "String comparisons only. Default: true."
+              }
+            }
+          }
+        }
+      }
+    },
+    "response": {
+      "type": "object",
+      "required": ["type", "content"],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "enum": [
+            "player_thought",
+            "player_dialogue",
+            "direct_narration",
+            "persistent_generic",
+            "diary_entry",
+            "dynamic_bio_update"
+          ],
+          "description": "Kind of response generated when the trigger matches. player_thought = internal monologue, player_dialogue = player speaks aloud, direct_narration = narrative text NPCs react to, persistent_generic = log event without dialogue, diary_entry = create a diary entry, dynamic_bio_update = update character biography."
+        },
+        "content": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Inja template string. Available variables: {{ player_name }}, {{ player.name }}, {{ event_json.FIELD }}, {{ time_desc }}, {{ location }}, {{ gameTimeStr }}."
+        },
+        "targetScope": {
+          "enum": ["triggering_actor", "player", "all_pinned_actors", "all_nearby_actors"],
+          "description": "Required for diary_entry and dynamic_bio_update. Who the diary/bio update applies to."
+        },
+        "nearbyRadius": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Optional. Radius in game units for 'nearby' scopes (default 2000)."
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "enum": ["diary_entry", "dynamic_bio_update"] } }, "required": ["type"] },
+          "then": { "required": ["targetScope"] }
+        }
+      ]
+    },
+    "audience": {
+      "enum": ["player", "originator", "target", "originator_or_target", "everyone", "nearby_npcs"],
+      "description": "Who perceives the response. Default: player. originator = actor that caused the event, target = target of the event, nearby_npcs = NPCs only (excludes player)."
+    },
+    "enabled": {
+      "type": "boolean",
+      "description": "If false, the trigger is skipped entirely. Default: true."
+    },
+    "probability": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Chance per matching event that the response actually fires (0.0 to 1.0). Default: 1.0."
+    },
+    "cooldownSeconds": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Minimum seconds between fires for this trigger. Default: 0."
+    },
+    "priority": {
+      "type": "integer",
+      "description": "Ordering hint when multiple triggers match the same event. Higher fires first."
+    }
+  }
+}
