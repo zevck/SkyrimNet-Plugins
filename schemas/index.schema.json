@@ -97,13 +97,14 @@
         },
         "contents": {
           "type": "object",
-          "required": ["triggers", "actions", "prompts"],
+          "required": ["triggers", "actions", "prompts", "knowledge"],
           "additionalProperties": false,
           "description": "Required for bundle plugins. Absent for listing plugins (they have no content files in the repo). File counts derived by walking the plugin directory.",
           "properties": {
             "triggers": { "type": "integer", "minimum": 0 },
             "actions": { "type": "integer", "minimum": 0 },
-            "prompts": { "type": "integer", "minimum": 0 }
+            "prompts": { "type": "integer", "minimum": 0 },
+            "knowledge": { "type": "integer", "minimum": 0 }
           }
         },
         "mods": {

@@ -14,6 +14,7 @@ A plugin contains any combination of:
 - **Prompts** (`.prompt`): Inja template files using `{{ var }}`, `{% if %}`, `{# comment #}`, and function calls like `decnpc(uuid).name`. They shape NPC knowledge and behavior.
 - **Triggers** (`.yaml`): React to game events and emit dialogue, narration, diary entries, or bio updates.
 - **Actions** (`.yaml`): Map NPC behaviors to Papyrus script functions. Actions are always human-reviewed upstream; if you see any `actions/*.yaml` in the input, output `{"decision":"uncertain","reason":"Contains actions; requires human review.","flags":[]}` and stop.
+- **Knowledge packs** (`.sknpack`): JSON files containing collections of conditional knowledge entries injected into NPC prompts when a decorator expression matches. Each entry has a `content` field (the actual text injected) and a `condition_expr` field (a decorator expression like `is_in_faction(actorUUID, "X")` or `decnpc(actorUUID).race == "Imperial"`). The `content` field is the part that needs review for forbidden content — it's the text the LLM actually sees. The `condition_expr` is normal decorator expression syntax and is not obfuscation. Ignore the wrapping JSON structure (`skyrimnet_knowledge_pack`, `npc_groups`, `entry_count`, `format_version`, `exported_at`, etc.) — scan the `content` and `display_name` values of each entry.
 </background>
 
 <input_format>
