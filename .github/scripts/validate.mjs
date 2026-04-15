@@ -1,0 +1,551 @@
+#!/usr/bin/env node
+// SkyrimNet Plugins — structural validator
+//
+// Runs inside .github/workflows/validate.yml on every pull request. Consumes:
+//   - BASE_DIR:    path to the base branch checkout (trusted — schemas, index.json, etc.)
+//   - PR_DIR:      path to the PR head checkout (untrusted — only plugins/ is sparse-checked-out)
+//   - PR_AUTHOR:   GitHub username of the PR author (from github.event.pull_request.user.login)
+//   - PR_BODY:     PR description body (used to detect dashboard-submitted vs manual PRs)
+//   - PR_NUMBER:   PR number (informational, for log output)
+//   - RESULT_FILE: absolute path to write the JSON result to (workflow reads this for labels/comments)
+//
+// Never consumes anything from the PR side that could influence execution:
+// no require(), no eval(), no dynamic imports of PR files. The PR is treated
+// as pure data to be read and structurally validated against schemas loaded
+// from BASE_DIR.
+
+import fs from "node:fs";
+import path from "node:path";
+import Ajv from "ajv/dist/2020.js";
+import addFormats from "ajv-formats";
+import yaml from "js-yaml";
+
+// ----- Configuration -------------------------------------------------------
+
+const PER_FILE_SIZE_LIMITS = {
+  // bytes; matches memory's locked size policy
+  trigger: 32 * 1024,
+  action: 32 * 1024,
+  // prompt and sknpack have no per-file cap (only bundle-level applies)
+};
+
+const BUNDLE_TOTAL_SIZE_LIMIT = 10 * 1024 * 1024; // 10 MB
+const BUNDLE_FILE_COUNT_LIMIT = 1500;
+
+const DASHBOARD_MARKER = "<!-- skyrimnet-hub: dashboard-submitted -->";
+
+// Content type subdirectories inside a plugin
+const CONTENT_DIRS = ["triggers", "actions", "prompts", "knowledge"];
+
+// ----- Environment ---------------------------------------------------------
+
+const env = {
+  BASE_DIR: requireEnv("BASE_DIR"),
+  PR_DIR: requireEnv("PR_DIR"),
+  PR_AUTHOR: requireEnv("PR_AUTHOR"),
+  PR_BODY: process.env.PR_BODY ?? "",
+  PR_NUMBER: process.env.PR_NUMBER ?? "unknown",
+  RESULT_FILE: requireEnv("RESULT_FILE"),
+};
+
+function requireEnv(name) {
+  const v = process.env[name];
+  if (!v) {
+    console.error(`Missing required env var: ${name}`);
+    process.exit(1);
+  }
+  return v;
+}
+
+// ----- Result collector ----------------------------------------------------
+
+const result = {
+  success: false,
+  labels: [],
+  errors: [],
+  warnings: [],
+  comment: null,
+};
+
+function addError(file, message) {
+  result.errors.push({ file, message });
+  // Emit GitHub Actions annotation so it shows inline in the PR diff
+  const escaped = message.replace(/\n/g, "%0A").replace(/\r/g, "");
+  if (file) {
+    console.log(`::error file=${file}::${escaped}`);
+  } else {
+    console.log(`::error::${escaped}`);
+  }
+}
+
+function addWarning(file, message) {
+  result.warnings.push({ file, message });
+  const escaped = message.replace(/\n/g, "%0A").replace(/\r/g, "");
+  if (file) {
+    console.log(`::warning file=${file}::${escaped}`);
+  } else {
+    console.log(`::warning::${escaped}`);
+  }
+}
+
+function finish() {
+  result.success = result.errors.length === 0;
+
+  // Build the comment for the PR (omit if nothing interesting to say)
+  const parts = [];
+  if (result.errors.length > 0) {
+    parts.push(`### Validation failed (${result.errors.length} error${result.errors.length === 1 ? "" : "s"})`);
+    parts.push("");
+    for (const err of result.errors) {
+      parts.push(`- **${err.file ?? "(general)"}** — ${err.message}`);
+    }
+    parts.push("");
+    parts.push("See the inline annotations in the diff for exact locations.");
+  }
+  if (result.labels.includes("manual-review") && result.errors.length === 0) {
+    parts.push(
+      "### Routed to manual review",
+      "",
+      result.manualReason ?? "This PR will be reviewed by a human. Expect up to a week for action-containing submissions.",
+    );
+  }
+  if (parts.length > 0) {
+    result.comment = parts.join("\n");
+  }
+
+  fs.writeFileSync(env.RESULT_FILE, JSON.stringify(result, null, 2));
+  process.exit(result.success ? 0 : 1);
+}
+
+// ----- Schema loading ------------------------------------------------------
+
+const ajv = new Ajv({
+  allErrors: true,
+  strict: false,
+  allowUnionTypes: true,
+});
+addFormats.default(ajv);
+
+const schemasDir = path.join(env.BASE_DIR, "schemas");
+const schemas = {};
+
+for (const name of ["manifest", "trigger", "action", "knowledge-pack", "index"]) {
+  const file = path.join(schemasDir, `${name}.schema.json`);
+  if (!fs.existsSync(file)) {
+    console.error(`Missing schema: ${file}`);
+    process.exit(1);
+  }
+  const raw = JSON.parse(fs.readFileSync(file, "utf8"));
+  schemas[name] = {
+    raw,
+    validate: ajv.compile(raw),
+  };
+}
+
+// ----- Detect manual vs dashboard PR --------------------------------------
+
+const isDashboardSubmitted = env.PR_BODY.includes(DASHBOARD_MARKER);
+if (!isDashboardSubmitted) {
+  console.log(
+    "PR body does not contain the dashboard marker. Routing to manual review after structural checks.",
+  );
+}
+
+// ----- Changed files -------------------------------------------------------
+
+// List every file under PR_DIR. We don't use `git diff` here because the CI
+// workflow already sparse-checks-out only `plugins/` — anything visible in
+// PR_DIR is by construction part of the PR, and the authoritative "does the
+// PR touch infra files?" check is enforced structurally by sparse-checkout
+// plus the path-scope verification below.
+let changedFiles = [];
+try {
+  changedFiles = walkTree(env.PR_DIR).map((abs) => path.relative(env.PR_DIR, abs).replace(/\\/g, "/"));
+} catch (e) {
+  addError(null, `Could not enumerate PR files: ${e.message}`);
+  finish();
+}
+
+function walkTree(root) {
+  if (!fs.existsSync(root)) return [];
+  const out = [];
+  const stack = [root];
+  while (stack.length > 0) {
+    const dir = stack.pop();
+    const entries = fs.readdirSync(dir, { withFileTypes: true });
+    for (const entry of entries) {
+      if (entry.name === ".git") continue;
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        stack.push(full);
+      } else if (entry.isFile()) {
+        out.push(full);
+      }
+    }
+  }
+  return out;
+}
+
+// ----- Path scope check ----------------------------------------------------
+//
+// Sparse checkout only pulls plugins/, so anything present in PR_DIR must
+// be under plugins/ — but we still enforce per-author scoping and single-plugin.
+
+const pluginRoots = new Set();
+
+for (const rel of changedFiles) {
+  // Reject any file not under plugins/
+  if (!rel.startsWith("plugins/")) {
+    addError(rel, `File is outside plugins/. Infrastructure changes must be made directly by maintainers, not via PR.`);
+    continue;
+  }
+
+  // Must be under plugins/{PR_AUTHOR}/{slug}/
+  const parts = rel.split("/");
+  if (parts.length < 4) {
+    addError(rel, `File is not deep enough to be inside a plugin directory. Expected plugins/${env.PR_AUTHOR}/{slug}/...`);
+    continue;
+  }
+  const [, user, slug] = parts;
+  if (user !== env.PR_AUTHOR) {
+    addError(rel, `PR author is '${env.PR_AUTHOR}' but this file is under plugins/${user}/. Contributors may only modify files in their own namespace.`);
+    continue;
+  }
+  if (!/^[a-z0-9][a-z0-9-]*[a-z0-9]$/.test(slug)) {
+    addError(rel, `Plugin slug '${slug}' does not match the required format (lowercase alphanumeric + hyphens, 3-50 chars).`);
+    continue;
+  }
+  pluginRoots.add(`plugins/${user}/${slug}`);
+}
+
+if (result.errors.length > 0) {
+  // Path errors short-circuit the rest of validation
+  routeOrFail();
+  finish();
+}
+
+if (pluginRoots.size === 0) {
+  addError(null, "No plugin files found in the PR. Nothing to validate.");
+  routeOrFail();
+  finish();
+}
+
+if (pluginRoots.size > 1) {
+  addError(
+    null,
+    `This PR touches ${pluginRoots.size} plugin directories (${[...pluginRoots].join(", ")}). One plugin per PR is required — please split this into separate submissions.`,
+  );
+  routeOrFail();
+  finish();
+}
+
+const pluginRoot = [...pluginRoots][0];
+const pluginAbs = path.join(env.PR_DIR, pluginRoot);
+
+// ----- Manifest ------------------------------------------------------------
+
+const manifestPath = `${pluginRoot}/manifest.json`;
+const actualManifestAbs = path.join(pluginAbs, "manifest.json");
+if (!fs.existsSync(actualManifestAbs)) {
+  addError(manifestPath, "manifest.json is missing. Every plugin must have one.");
+  routeOrFail();
+  finish();
+}
+
+let manifest;
+try {
+  manifest = JSON.parse(fs.readFileSync(actualManifestAbs, "utf8"));
+} catch (e) {
+  addError(manifestPath, `manifest.json is not valid JSON: ${e.message}`);
+  routeOrFail();
+  finish();
+}
+
+if (!schemas.manifest.validate(manifest)) {
+  for (const err of schemas.manifest.validate.errors ?? []) {
+    addError(manifestPath, `Schema: ${err.instancePath || "/"} ${err.message}`);
+  }
+}
+
+// Cross-field checks
+if (manifest.author !== env.PR_AUTHOR) {
+  addError(
+    manifestPath,
+    `manifest.author is '${manifest.author}' but the PR is opened by '${env.PR_AUTHOR}'. These must match.`,
+  );
+}
+
+// Type gate: listing is not yet supported
+if (manifest.type === "listing") {
+  addError(
+    manifestPath,
+    "Listing plugins are not yet supported. This will be enabled in a future release. For now, only 'bundle' type plugins can be published.",
+  );
+}
+
+// Slug consistency: derive the slug from the title and compare to directory
+if (typeof manifest.title === "string") {
+  const expectedSlug = slugifyTitle(manifest.title);
+  const actualSlug = pluginRoot.split("/")[2];
+  if (expectedSlug !== actualSlug) {
+    addError(
+      manifestPath,
+      `Directory slug '${actualSlug}' does not match the slug derived from title '${manifest.title}' (expected '${expectedSlug}'). Slugs are derived automatically from the title by the dashboard.`,
+    );
+  }
+}
+
+function slugifyTitle(title) {
+  return String(title)
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 50);
+}
+
+// ----- Content files -------------------------------------------------------
+
+const contentFiles = walkTree(pluginAbs).filter(
+  (abs) => abs !== actualManifestAbs,
+);
+
+const contents = { triggers: 0, actions: 0, prompts: 0, knowledge: 0 };
+let totalBundleSize = 0;
+
+for (const abs of contentFiles) {
+  const rel = path.relative(env.PR_DIR, abs).replace(/\\/g, "/");
+  const subPath = path.relative(pluginAbs, abs).replace(/\\/g, "/");
+  const [topDir, ...rest] = subPath.split("/");
+  const basename = path.basename(subPath);
+
+  const stat = fs.statSync(abs);
+  totalBundleSize += stat.size;
+
+  if (!CONTENT_DIRS.includes(topDir)) {
+    addError(
+      rel,
+      `Unexpected file location '${subPath}'. Files must live under triggers/, actions/, prompts/, or knowledge/ inside the plugin directory.`,
+    );
+    continue;
+  }
+
+  if (rest.length === 0) {
+    addError(
+      rel,
+      `File '${basename}' is not inside a recognized content subdirectory.`,
+    );
+    continue;
+  }
+
+  switch (topDir) {
+    case "triggers":
+      validateYamlFile(rel, abs, stat, "trigger");
+      contents.triggers++;
+      break;
+    case "actions":
+      validateYamlFile(rel, abs, stat, "action");
+      contents.actions++;
+      break;
+    case "prompts":
+      validatePromptFile(rel, abs, stat);
+      contents.prompts++;
+      break;
+    case "knowledge":
+      validateKnowledgePack(rel, abs);
+      contents.knowledge++;
+      break;
+  }
+}
+
+function validateYamlFile(rel, abs, stat, kind) {
+  if (!/\.yaml$/i.test(abs)) {
+    addError(rel, `${kind} files must use the .yaml extension.`);
+    return;
+  }
+  const limit = PER_FILE_SIZE_LIMITS[kind];
+  if (limit && stat.size > limit) {
+    addError(
+      rel,
+      `File is ${formatBytes(stat.size)}, exceeds the ${formatBytes(limit)} per-file limit for ${kind} files.`,
+    );
+    return;
+  }
+  let parsed;
+  try {
+    parsed = yaml.load(fs.readFileSync(abs, "utf8"));
+  } catch (e) {
+    addError(rel, `YAML parse error: ${e.message}`);
+    return;
+  }
+  if (!schemas[kind].validate(parsed)) {
+    for (const err of schemas[kind].validate.errors ?? []) {
+      addError(rel, `Schema: ${err.instancePath || "/"} ${err.message}`);
+    }
+  }
+}
+
+function validatePromptFile(rel, abs, stat) {
+  if (!/\.prompt$/i.test(abs)) {
+    addError(rel, "Prompt files must use the .prompt extension.");
+    return;
+  }
+  if (stat.size === 0) {
+    addError(rel, "Prompt file is empty.");
+    return;
+  }
+  // UTF-8 sanity check: if Node can read it as utf8 without throwing and
+  // re-encoding round-trips, it's valid enough for our purposes.
+  try {
+    const text = fs.readFileSync(abs, "utf8");
+    if (text.trim().length === 0) {
+      addError(rel, "Prompt file contains only whitespace.");
+    }
+  } catch (e) {
+    addError(rel, `Could not read as UTF-8 text: ${e.message}`);
+  }
+}
+
+function validateKnowledgePack(rel, abs) {
+  if (!/\.sknpack$/i.test(abs)) {
+    addError(rel, "Knowledge pack files must use the .sknpack extension.");
+    return;
+  }
+  let parsed;
+  try {
+    parsed = JSON.parse(fs.readFileSync(abs, "utf8"));
+  } catch (e) {
+    addError(rel, `Knowledge pack is not valid JSON: ${e.message}`);
+    return;
+  }
+  if (!schemas["knowledge-pack"].validate(parsed)) {
+    for (const err of schemas["knowledge-pack"].validate.errors ?? []) {
+      addError(rel, `Schema: ${err.instancePath || "/"} ${err.message}`);
+    }
+    return;
+  }
+  // Cross-field check the schema can't express: entry_count must match entries.length
+  const pack = parsed.skyrimnet_knowledge_pack;
+  if (pack && Array.isArray(pack.entries) && pack.entry_count !== pack.entries.length) {
+    addError(
+      rel,
+      `entry_count (${pack.entry_count}) does not match entries.length (${pack.entries.length}). This should never happen — the file was not exported cleanly.`,
+    );
+  }
+}
+
+function formatBytes(n) {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  return `${(n / 1024 / 1024).toFixed(2)} MB`;
+}
+
+// ----- Bundle-wide checks --------------------------------------------------
+
+const totalFileCount = contentFiles.length + 1; // +1 for manifest.json
+
+if (totalFileCount > BUNDLE_FILE_COUNT_LIMIT) {
+  addError(
+    null,
+    `Plugin contains ${totalFileCount} files, exceeds the ${BUNDLE_FILE_COUNT_LIMIT} per-bundle limit. Very large submissions must be published as a listing plugin pointing to an external mod host.`,
+  );
+}
+
+if (totalBundleSize > BUNDLE_TOTAL_SIZE_LIMIT) {
+  addError(
+    null,
+    `Plugin total size is ${formatBytes(totalBundleSize)}, exceeds the ${formatBytes(BUNDLE_TOTAL_SIZE_LIMIT)} per-bundle limit. Very large submissions must be published as a listing plugin pointing to an external mod host.`,
+  );
+}
+
+// Invocation required if plugin contains actions
+if (contents.actions > 0 && !manifest.invocation) {
+  addError(
+    manifestPath,
+    "Plugin contains actions but manifest.invocation is missing. Action-containing plugins must declare the invocation block for reviewer context.",
+  );
+}
+
+// Listing plugins must have no content
+if (manifest.type === "listing") {
+  const contentCount = contents.triggers + contents.actions + contents.prompts + contents.knowledge;
+  if (contentCount > 0) {
+    addError(
+      manifestPath,
+      `Listing plugins must not contain any content files, but this plugin has ${contentCount}. Listings are metadata-only pointers to externally hosted mods.`,
+    );
+  }
+}
+
+// ----- Title uniqueness (against base/index.json) -------------------------
+
+try {
+  const indexPath = path.join(env.BASE_DIR, "index.json");
+  if (fs.existsSync(indexPath)) {
+    const index = JSON.parse(fs.readFileSync(indexPath, "utf8"));
+    if (Array.isArray(index.plugins) && typeof manifest.title === "string") {
+      const incomingKey = normalizeTitle(manifest.title);
+      for (const entry of index.plugins) {
+        if (entry.id === pluginRoot) continue; // same plugin, updating itself
+        if (typeof entry.title === "string" && normalizeTitle(entry.title) === incomingKey) {
+          addError(
+            manifestPath,
+            `Title '${manifest.title}' collides with existing plugin '${entry.id}' (title: '${entry.title}'). Plugin titles must be globally unique (case-insensitive).`,
+          );
+          break;
+        }
+      }
+    }
+  }
+} catch (e) {
+  addWarning(null, `Could not check title uniqueness: ${e.message}`);
+}
+
+function normalizeTitle(title) {
+  return String(title)
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, " ")
+    .replace(/[.,!?;:'"]+$/g, "");
+}
+
+// ----- Routing -------------------------------------------------------------
+
+routeOrFail();
+finish();
+
+function routeOrFail() {
+  const hasErrors = result.errors.length > 0;
+
+  if (hasErrors) {
+    result.labels = ["validation-failed"];
+    return;
+  }
+
+  if (!isDashboardSubmitted) {
+    result.labels = ["manual-review"];
+    result.manualReason =
+      "This PR was opened manually, not through the SkyrimNet dashboard. Manual submissions are always reviewed by a human. The dashboard's publish flow is the supported path for contributors.";
+    return;
+  }
+
+  // Dashboard-submitted, structurally clean
+  if (contents.actions > 0) {
+    result.labels = ["manual-review"];
+    result.manualReason =
+      "Plugin contains actions. Action-containing plugins are always manually reviewed to verify safety of Papyrus function calls. Expect up to a week for review.";
+    return;
+  }
+
+  if (manifest.type === "listing") {
+    // Should have been caught by the listing gate above, but belt-and-suspenders
+    result.labels = ["manual-review"];
+    result.manualReason = "Listing plugins are always manually reviewed.";
+    return;
+  }
+
+  // Pure triggers/prompts/knowledge — agent review path
+  result.labels = ["ready-for-agent-review"];
+}
