@@ -103,26 +103,12 @@
     "requirements": {
       "type": "array",
       "maxItems": 20,
-      "description": "Free-form list of things the user needs to install for this plugin to work — other Skyrim mods, SKSE distributions, third-party tools, other SkyrimNet hub plugins, anything. Rendered as a bulleted list of links on the plugin's detail page in the dashboard. No version checking, no install-time enforcement, no transitive resolution — just author intent shown to the user, exactly like a Nexus mod page's 'Requirements' section. Distinct from `mods[]`, which is structured data the dashboard cross-references against the user's actual installed plugins; `requirements[]` is human-readable notice content that can include things the dashboard cannot introspect (SKSE, Address Library, other hub plugins, etc.).",
+      "description": "Free-form list of things the user needs to install for this plugin to work — other Skyrim mods, SKSE distributions, third-party tools, other SkyrimNet hub plugins, anything. Rendered as a bulleted list on the plugin's detail page. No version checking, no install-time enforcement, no transitive resolution — just author intent shown to the user, exactly like a Nexus mod page's 'Requirements' section. No URLs — users can find the requirements themselves. Distinct from `mods[]`, which is structured data the dashboard cross-references against the user's actual installed plugins.",
       "items": {
-        "type": "object",
-        "required": ["name", "url"],
-        "additionalProperties": false,
-        "properties": {
-          "name": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 200,
-            "description": "Display name of the requirement. May include version notes like 'Apocalypse - Magic of Skyrim >= 9.45'."
-          },
-          "url": {
-            "type": "string",
-            "pattern": "^https?://",
-            "minLength": 10,
-            "maxLength": 2000,
-            "description": "Link to where the user can download or learn about the requirement. Must be http:// or https://."
-          }
-        }
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 200,
+        "description": "Display name of the requirement. May include version notes like 'Apocalypse - Magic of Skyrim >= 9.45'."
       }
     },
     "invocation": {

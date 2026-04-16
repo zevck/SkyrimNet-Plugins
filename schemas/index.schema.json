@@ -116,12 +116,18 @@
         "mods": {
           "type": "array",
           "maxItems": 50,
-          "description": "Always present (empty array when the plugin has no mod integrations). Subset of manifest.json's mods array: only 'file' (lowercased) and 'required'. Human-readable 'name' is fetched from the manifest on detail view.",
+          "description": "Always present (empty array when the plugin has no mod integrations). Includes 'name' for display, 'file' (lowercased) for compatibility matching, and 'required' flag.",
           "items": {
             "type": "object",
-            "required": ["file", "required"],
+            "required": ["name", "file", "required"],
             "additionalProperties": false,
             "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200,
+                "description": "Human-readable mod name for display in browse listings."
+              },
               "file": {
                 "type": "string",
                 "pattern": "\\.(esp|esl|esm|dll)$",

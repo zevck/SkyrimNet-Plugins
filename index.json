@@ -1,5 +1,89 @@
 {
   "schema_version": 1,
-  "generated_at": null,
-  "plugins": []
+  "generated_at": "2026-04-16T22:23:36.668Z",
+  "plugins": [
+    {
+      "id": "plugins/99887766/dark-brotherhood-personalities",
+      "type": "bundle",
+      "title": "Dark Brotherhood Personalities",
+      "tagline": "Distinct personalities and deep lore for every Dark Brotherhood member.",
+      "author_id": 99887766,
+      "author": "NightMother",
+      "version": "2.1.0",
+      "skyrimnet_version": "0-19-0-0",
+      "tags": [
+        "roleplay",
+        "npcs",
+        "dark brotherhood",
+        "lore"
+      ],
+      "nsfw": false,
+      "mods": [
+        {
+          "name": "Skyrim",
+          "file": "skyrim.esm",
+          "required": true
+        }
+      ],
+      "first_published": "2026-04-16T22:23:36.660Z",
+      "last_updated": "2026-04-16T22:23:36.660Z",
+      "contents": {
+        "triggers": 1,
+        "actions": 0,
+        "prompts": 3,
+        "knowledge": 1
+      }
+    },
+    {
+      "id": "plugins/55443322/companions-lore-pack",
+      "type": "bundle",
+      "title": "Companions Lore Pack",
+      "tagline": "Deep lore knowledge for all Companions members about lycanthropy and Ysgramor.",
+      "author_id": 55443322,
+      "author": "LoreHound",
+      "version": "1.0.0",
+      "skyrimnet_version": "0-19-0-0",
+      "tags": [
+        "lore",
+        "companions",
+        "knowledge",
+        "werewolf"
+      ],
+      "nsfw": false,
+      "mods": [],
+      "first_published": "2026-04-16T22:23:36.567Z",
+      "last_updated": "2026-04-16T22:23:36.567Z",
+      "contents": {
+        "triggers": 0,
+        "actions": 0,
+        "prompts": 0,
+        "knowledge": 1
+      }
+    },
+    {
+      "id": "plugins/12345678/healing-spell-commentary",
+      "type": "bundle",
+      "title": "Healing Spell Commentary",
+      "tagline": "Nearby NPCs react when the player casts healing magic.",
+      "author_id": 12345678,
+      "author": "ExampleUser",
+      "version": "1.0.0",
+      "skyrimnet_version": "0-19-0-0",
+      "tags": [
+        "magic",
+        "dialogue",
+        "restoration"
+      ],
+      "nsfw": false,
+      "mods": [],
+      "first_published": "2026-04-16T22:23:36.474Z",
+      "last_updated": "2026-04-16T22:23:36.474Z",
+      "contents": {
+        "triggers": 1,
+        "actions": 0,
+        "prompts": 1,
+        "knowledge": 0
+      }
+    }
+  ]
 }

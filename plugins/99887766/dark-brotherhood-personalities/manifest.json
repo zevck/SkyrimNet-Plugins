@@ -1,0 +1,16 @@
+{
+  "type": "bundle",
+  "title": "Dark Brotherhood Personalities",
+  "tagline": "Distinct personalities and deep lore for every Dark Brotherhood member.",
+  "description": "A comprehensive personality overhaul for every Dark Brotherhood member. Each assassin now has a distinct voice, backstory knowledge, and reaction patterns.\n\nIncludes:\n- Unique personality prompts for Astrid, Cicero, Nazir, Festus, Gabriella, and Veezara\n- Cicero's dialogue is properly unhinged with references to the Night Mother\n- Knowledge packs covering DB lore, contracts, and internal politics\n- Triggers for quest-specific reactions during the DB questline",
+  "author_id": 99887766,
+  "author": "NightMother",
+  "version": "2.1.0",
+  "skyrimnet_version": "0-19-0-0",
+  "tags": ["roleplay", "npcs", "dark brotherhood", "lore"],
+  "nsfw": false,
+  "mods": [
+    { "name": "Skyrim", "file": "skyrim.esm", "required": true }
+  ],
+  "requirements": ["SkyrimNet 0.19+"]
+}

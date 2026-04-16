@@ -109,9 +109,10 @@ if (!fs.existsSync(PLUGINS_DIR)) {
         knowledge: countFiles(path.join(pluginDir, "knowledge")),
       } : undefined;
 
-      // Build mods array (subset: file + required only)
+      // Build mods array (name + file + required)
       const mods = Array.isArray(manifest.mods)
         ? manifest.mods.map(m => ({
+            name: m.name || m.file || "",
             file: (m.file || "").toLowerCase(),
             required: !!m.required,
           })).filter(m => m.file)
