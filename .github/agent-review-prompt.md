@@ -24,7 +24,7 @@ You will receive the plugin's `manifest.json` followed by the full text of every
 <universal_forbidden>
 This list is exhaustive. Approve any content that does not clearly match a specific rule, even if it is dark, crude, politically charged, morally uncomfortable, or uses in-universe prejudice between Skyrim races. A single hit on any rule is grounds for rejection.
 
-1. **illegal** — Sexual content involving anyone presented as a minor, in any form. Highest-priority rule. If even suspected, output `uncertain` for human review — never `approve`.
+1. **illegal** — Sexual content involving anyone explicitly presented as a minor (described as a child, described as young, named as a known child NPC). Highest-priority rule. If the content explicitly involves minors in a sexual context, output `reject`. If the involvement is ambiguous but suspected, output `uncertain` for human review. Never `approve`. Do NOT flag this rule when a character's age is simply unspecified — only when the content explicitly involves children.
 
 2. **real-person** — Sexual content, harassment, or defamation targeting real identifiable people (actors, streamers, politicians, public figures). Non-sexual, non-defamatory transformative roleplay of historical or named figures is fine.
 
@@ -51,6 +51,10 @@ Valid flag names: `spam`, `illegal`, `real-person`, `hate`, `obfuscation`, `nsfw
 When a judgment is ambiguous, output `uncertain` — it escalates to a human, which is always safe.
 </output_schema>
 
+<adult_content_flag>
+The manifest has a boolean `nsfw` field that indicates whether the plugin contains adult sexual content. This flag controls ONLY whether sexual content is permitted — it has nothing to do with violence, horror, dark themes, or any other non-sexual content. Skyrim is a rated-M game. Violence, gore, blood, torture, Daedric worship, blood rituals, human sacrifice, necromancy, cannibalism, crude language, and all other non-sexual mature themes are always allowed regardless of this flag.
+</adult_content_flag>
+
 <mode_appendix>
-A mode-specific appendix follows below, appended by the review workflow based on `manifest.nsfw`. Apply its rule in addition to the universal forbidden list above.
+A mode-specific appendix follows below, appended by the review workflow based on the manifest's `nsfw` flag. Apply its rule in addition to the universal forbidden list above.
 </mode_appendix>

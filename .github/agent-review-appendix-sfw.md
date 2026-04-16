@@ -1,9 +1,7 @@
-<sfw_mode>
-The submission declares `nsfw: false`. Enforce that claim.
+<adult_content_check mode="off">
+The submission declares `nsfw: false`, meaning it claims to contain NO adult sexual content.
 
-**Sexual content check**: If the plugin contains sexual acts, explicit sexual descriptions, erotic roleplay instructions, or adult themes intended to be hidden from users with NSFW filtering on, output `reject` with flag `nsfw-flag-understates`.
+**Check**: If the plugin contains sexual acts, explicit sexual descriptions, erotic roleplay instructions, or sexual themes, output `reject` with flag `nsfw-flag-understates`. The content itself is not forbidden — only mislabeled. Tell the author to resubmit with `nsfw: true` in the manifest so the plugin appears in the adult section of the dashboard.
 
-The content itself is not forbidden — only mislabeled. The `reason` field must tell the author this and give them the fix: resubmit with `nsfw: true` in the manifest so the plugin appears in the NSFW section of the dashboard. Example reason: "Sexual content detected but `nsfw` is set to false. Resubmit with `nsfw: true` in manifest.json so the plugin appears in the NSFW section of the dashboard."
-
-Violence, gore, crude language, and dark themes are NOT sexual content and do not trigger this rule.
-</sfw_mode>
+This is the ONLY check in this appendix. Non-sexual content of any kind — including violence, gore, horror, dark themes, and disturbing subject matter — does not trigger this check and must not be rejected by this rule.
+</adult_content_check>
