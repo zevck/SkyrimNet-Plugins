@@ -1,0 +1,56 @@
+name: Build plugin index
+
+# Regenerates index.json whenever a plugin is merged to main. Walks every
+# plugins/{author_id}/{slug}/manifest.json, extracts browse-page fields,
+# counts content files, derives dates from git history, and writes the
+# aggregate index.json. Commits the result back to main via the built-in
+# GITHUB_TOKEN.
+#
+# The index is the only data source the dashboard reads for the browse page.
+# Individual manifest.json files are fetched on-demand for detail views.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'plugins/**'
+      - 'hidden.json'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-index
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Full history needed for git log date derivation
+          fetch-depth: 0
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Build index
+        run: node .github/scripts/build-index.mjs
+
+      - name: Commit index.json
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.json
+          if git diff --cached --quiet; then
+            echo "index.json unchanged — nothing to commit"
+          else
+            git commit -m "chore: rebuild index.json [skip ci]"
+            git push
+          fi

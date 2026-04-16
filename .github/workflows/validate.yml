@@ -91,16 +91,17 @@ jobs:
             const result = JSON.parse(fs.readFileSync(resultPath, 'utf8'));
             const pr = context.issue;
 
-            // Labels emitted by validate.yml:
-            //   validation-failed      — structural error
-            //   ready-for-agent-review — passed structure, dashboard-submitted,
-            //                            automated path
-            //   manual-review          — human required (manual PR, actions,
-            //                            or flagged)
+            // Labels managed by the review pipeline. validate.yml emits
+            // the first three; agent-review.yml emits the last three.
+            // When validate re-runs (author pushed new commits), ALL
+            // pipeline labels are cleaned up so the review starts fresh.
             const ourLabels = new Set([
               'validation-failed',
               'ready-for-agent-review',
               'manual-review',
+              'agent-approved',
+              'agent-rejected',
+              'agent-uncertain',
             ]);
 
             // Remove any of our labels that are currently on the PR but
