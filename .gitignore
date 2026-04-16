@@ -2,3 +2,4 @@
 /.github/scripts/node_modules/
 /.github/scripts/test-fixtures
 .github/scripts/run-tests.mjs
+/ai_docs

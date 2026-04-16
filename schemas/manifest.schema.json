@@ -2,76 +2,81 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://raw.githubusercontent.com/MinLL/SkyrimNet-Plugins/main/schemas/manifest.schema.json",
   "title": "SkyrimNet Plugin Manifest",
-  "description": "Metadata for a plugin submission. One manifest.json per plugin directory. Cross-file constraints (title uniqueness, author matches PR author, invocation required when plugin contains actions, listing plugins have no content files) live in validate.yml — this schema is per-file structural validation only. Nearly every field is populated by the dashboard's publish form; contributors rarely author this by hand.",
+  "description": "Metadata for a plugin submission. One manifest.json per plugin directory.\n\nThis schema is deliberately permissive on per-field formatting because the SkyrimNet dashboard is the only supported submission path and is the authoritative source of truth for how fields are shaped. The dashboard generates titles, taglines, descriptions, versions, tags, mod lists, and every other author-facing field, so revalidating their exact character patterns here would only produce false positives when the dashboard evolves.\n\nWhat this schema still enforces is structural: which fields are required, their fundamental types, the bundle-vs-listing discriminator, conditional requirements (listings need external_url, action plugins need an invocation block with source_mods), and basic safety rules (external URLs must be http(s), strings must be non-empty, sanity size ceilings). Cross-file rules (title uniqueness, author matching, invocation-required-if-actions, listing-has-no-content-files) live in validate.yml, not here.\n\nIf you are reading this because the dashboard changed and manifests no longer validate, the fix is usually to relax the schema further — not tighten it.",
   "type": "object",
-  "required": ["type", "title", "tagline", "description", "author", "version", "skyrimnet_version", "nsfw"],
+  "required": ["type", "title", "tagline", "description", "author_id", "author", "version", "skyrimnet_version", "nsfw"],
   "additionalProperties": false,
   "properties": {
     "type": {
       "enum": ["bundle", "listing"],
-      "description": "Plugin kind. 'bundle' = self-contained, ships prompts/triggers/actions in the plugin directory, installable directly. 'listing' = metadata-only entry pointing to an externally hosted mod (Nexus, GitHub, etc.) — requires 'external_url' and is always manually reviewed. NOTE: listing support is not yet enabled; validate.yml rejects 'listing' until v1.1."
+      "description": "Plugin kind. 'bundle' = self-contained, ships content files. 'listing' = metadata-only pointer to an externally hosted mod, requires external_url. Listing support is gated in validate.yml until v1.1."
     },
     "external_url": {
       "type": "string",
-      "format": "uri",
       "pattern": "^https://",
       "minLength": 12,
-      "description": "Required if type == 'listing', forbidden otherwise. Must be an https:// URL. Dashboard displays the full hostname prominently — SkyrimNet does not verify or distribute the linked file."
+      "maxLength": 2000,
+      "description": "Required if type == 'listing', forbidden otherwise. Must be an https:// URL."
     },
     "title": {
       "type": "string",
-      "minLength": 3,
-      "maxLength": 80,
-      "pattern": "^[\\x21-\\x7E][\\x20-\\x7E]*[\\x21-\\x7E]$",
-      "description": "Human-readable plugin name. ASCII printable characters only (space through ~). No leading or trailing whitespace. Must be globally unique (case-insensitive) across the repo — uniqueness enforced by validate.yml."
+      "minLength": 1,
+      "maxLength": 200,
+      "description": "Human-readable plugin name. Globally unique across the repo (enforced by validate.yml, not by the schema)."
     },
     "tagline": {
       "type": "string",
-      "minLength": 10,
-      "maxLength": 100,
-      "pattern": "^[\\x21-\\x7E][\\x20-\\x7E]*[\\x21-\\x7E]$",
-      "description": "Short one-liner shown on browse cards. ASCII printable, no leading or trailing whitespace. Included in index.json."
+      "minLength": 1,
+      "maxLength": 200,
+      "description": "Short one-liner shown on browse cards. Included in index.json."
     },
     "description": {
       "type": "string",
-      "minLength": 20,
-      "maxLength": 1000,
-      "description": "Full description shown on the plugin detail page. Not included in index.json — fetched on-demand from manifest.json. Rendered as restricted markdown: headings (h1-h6), bold, italic, strikethrough, ordered and unordered lists, inline code, code blocks, links, blockquotes, horizontal rules. Images and raw HTML are NOT rendered (stripped or escaped by the dashboard renderer)."
+      "minLength": 1,
+      "maxLength": 5000,
+      "description": "Full description shown on the plugin detail page. Not included in index.json — fetched on-demand from manifest.json. Rendered as restricted markdown by the dashboard."
+    },
+    "author_id": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "GitHub user's immutable numeric ID (NOT the username). Auto-populated by the dashboard from /user API at publish time. This is the canonical ownership identifier — it never changes when a user renames their account, and it is the basis of the directory path (plugins/{author_id}/{slug}/). validate.yml cross-checks this against github.event.pull_request.user.id, which cannot be spoofed."
     },
     "author": {
       "type": "string",
-      "pattern": "^[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*$",
       "minLength": 1,
-      "maxLength": 39,
-      "description": "GitHub username. Auto-populated by the dashboard from the linked GitHub account — contributors never type it. Must match the parent directory name under plugins/ and the PR author (enforced by validate.yml). Regex matches GitHub's username rules: alphanumeric segments joined by single hyphens, 1-39 chars, no consecutive hyphens, no leading or trailing hyphens."
+      "maxLength": 50,
+      "description": "Free-form display name shown on the dashboard. NOT the GitHub username (that's just one possible value). Users in the SkyrimNet community are often known by handles different from their GitHub login. The display name has no uniqueness requirement; the dashboard disambiguates same-named users by appending a discriminator derived from author_id (Discord-style: 'Bob#5678'). Per-plugin in the manifest — users with multiple plugins update each individually if they want consistent rebranding."
     },
     "version": {
       "type": "string",
-      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
-      "description": "Semantic version (MAJOR.MINOR.PATCH). No pre-release tags. Bump on every update. Dashboard auto-increments if not changed."
+      "minLength": 1,
+      "maxLength": 50,
+      "description": "Plugin version. Format is whatever the dashboard emits — no schema-level pattern enforced."
     },
     "skyrimnet_version": {
       "type": "string",
-      "pattern": "^[0-9]+-[0-9]+-[0-9]+-[0-9]+$",
-      "description": "Version of SkyrimNet this plugin was built and tested against, in SkyrimNet's native format (four hyphen-separated integers, e.g. '0-19-0-0' for beta 19). Auto-populated by the dashboard at publish time from the running game's version. Used for reviewer context, install-time user warnings, and future compatibility filtering."
+      "minLength": 1,
+      "maxLength": 50,
+      "description": "Version of SkyrimNet this plugin was built against. Auto-populated by the dashboard from the running game's version. Format is whatever SkyrimNet exposes at the time — no schema-level pattern enforced so this survives future SkyrimNet version format changes."
     },
     "tags": {
       "type": "array",
+      "maxItems": 20,
       "items": {
         "type": "string",
-        "pattern": "^[a-z0-9][a-z0-9-]{0,18}[a-z0-9]$"
+        "minLength": 1,
+        "maxLength": 50
       },
-      "maxItems": 10,
-      "description": "Short lowercase tags for filtering (e.g. 'combat', 'dialogue', 'followers'). 3-20 chars, lowercase + digits + hyphens."
+      "description": "Short keywords for filtering. Whatever strings the dashboard emits — no pattern enforced."
     },
     "nsfw": {
       "type": "boolean",
-      "description": "Must accurately reflect whether the plugin contains adult/explicit content. Understating (content is NSFW but flag is false) is an auto-reject reason. Overstating is always fine."
+      "description": "Must accurately reflect whether the plugin contains adult/explicit content. Understating (content is NSFW but flag is false) is a content-review reject reason. Overstating is always fine."
     },
     "mods": {
       "type": "array",
       "maxItems": 50,
-      "description": "Skyrim mods this plugin integrates with. Enables 'compatible with my install' filtering and mod-based search. Populated by the dashboard from the user's installed plugin list (contributors click entries from a picker, never type filenames).",
+      "description": "Skyrim mods this plugin integrates with. Enables 'compatible with my install' filtering and mod-based search. Populated by the dashboard from the user's installed plugin list.",
       "items": {
         "type": "object",
         "required": ["name", "file", "required"],
@@ -79,39 +84,64 @@
         "properties": {
           "name": {
             "type": "string",
-            "minLength": 2,
-            "maxLength": 100,
-            "description": "Human-readable mod name (e.g. 'Apocalypse - Magic of Skyrim')."
+            "minLength": 1,
+            "maxLength": 200
           },
           "file": {
             "type": "string",
-            "pattern": "^[A-Za-z0-9 _\\-.'()]+\\.(esp|esl|esm|dll)$",
+            "minLength": 5,
             "maxLength": 255,
-            "description": "Plugin or DLL filename as it appears in the user's Data folder. Fetched directly from the installed plugin list by the dashboard — never typed by the contributor. Matched case-insensitively by the dashboard at install time. build-index.yml lowercases this value when copying into index.json."
+            "pattern": "\\.(esp|esl|esm|dll)$",
+            "description": "Plugin or DLL filename. Must end in .esp, .esl, .esm, or .dll. Fetched directly from the user's installed plugin list by the dashboard — never typed by contributors."
           },
           "required": {
-            "type": "boolean",
-            "description": "true = plugin does not function without this mod; false = enhances/optional."
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "requirements": {
+      "type": "array",
+      "maxItems": 20,
+      "description": "Free-form list of things the user needs to install for this plugin to work — other Skyrim mods, SKSE distributions, third-party tools, other SkyrimNet hub plugins, anything. Rendered as a bulleted list of links on the plugin's detail page in the dashboard. No version checking, no install-time enforcement, no transitive resolution — just author intent shown to the user, exactly like a Nexus mod page's 'Requirements' section. Distinct from `mods[]`, which is structured data the dashboard cross-references against the user's actual installed plugins; `requirements[]` is human-readable notice content that can include things the dashboard cannot introspect (SKSE, Address Library, other hub plugins, etc.).",
+      "items": {
+        "type": "object",
+        "required": ["name", "url"],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Display name of the requirement. May include version notes like 'Apocalypse - Magic of Skyrim >= 9.45'."
+          },
+          "url": {
+            "type": "string",
+            "pattern": "^https?://",
+            "minLength": 10,
+            "maxLength": 2000,
+            "description": "Link to where the user can download or learn about the requirement. Must be http:// or https://."
           }
         }
       }
     },
     "invocation": {
       "type": "object",
-      "description": "REQUIRED by validate.yml if the plugin contains any actions/*.yaml files. Provides reviewer context for manual action review. Never present for listing plugins or for bundles with no actions. Because community-submitted actions are always mod integrations by nature (first-party actions calling SkyrimNet's own scripts already ship with SkyrimNet and don't belong on the community hub), every action-containing plugin must declare the upstream mod(s) it depends on.",
+      "description": "REQUIRED by validate.yml if the plugin contains any actions/*.yaml files. Provides reviewer context for manual action review. Never present for listing plugins or for bundles with no actions.",
       "required": ["purpose", "source_mods", "side_effects", "attestation"],
       "additionalProperties": false,
       "properties": {
         "purpose": {
           "type": "string",
-          "minLength": 10,
+          "minLength": 1,
+          "maxLength": 2000,
           "description": "What the action(s) do, in plain English."
         },
         "source_mods": {
           "type": "array",
           "minItems": 1,
           "maxItems": 20,
-          "description": "Skyrim mods whose Papyrus functions the actions call. Required because community-submitted actions are always mod integrations — list each upstream mod separately so multi-mod integration packs can credit and document each dependency.",
+          "description": "Skyrim mods whose Papyrus functions the actions call. Required because community-submitted actions are always mod integrations by nature.",
           "items": {
             "type": "object",
             "required": ["name", "url"],
@@ -119,28 +149,29 @@
             "properties": {
               "name": {
                 "type": "string",
-                "minLength": 2,
-                "maxLength": 100,
-                "description": "Human-readable mod name."
+                "minLength": 1,
+                "maxLength": 200
               },
               "url": {
                 "type": "string",
-                "format": "uri",
                 "pattern": "^https?://",
-                "description": "Link to the mod's page (Nexus, GitHub, etc.)."
+                "minLength": 10,
+                "maxLength": 2000
               }
             }
           }
         },
         "side_effects": {
           "type": "string",
-          "minLength": 10,
+          "minLength": 1,
+          "maxLength": 2000,
           "description": "Reviewer-facing explanation of what game state the action modifies and why it's safe."
         },
         "attestation": {
           "type": "string",
-          "minLength": 20,
-          "description": "Author's signed statement that they tested the action for at least one hour with no save corruption or quest breakage."
+          "minLength": 1,
+          "maxLength": 2000,
+          "description": "Author's signed statement that they tested the action without save corruption or quest breakage."
         }
       }
     }

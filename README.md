@@ -18,8 +18,6 @@ Use the **Plugins** page in your in-game SkyrimNet dashboard to browse and insta
 
 The easiest way to publish is from the dashboard's **Publish** page. It handles everything — authenticating with GitHub via Device Flow, forking this repo, writing files to the correct location, and opening a pull request — so you never need to touch git.
 
-If you want to publish manually, see [CONTRIBUTING.md](CONTRIBUTING.md).
-
 ## Repository structure
 
 ```
