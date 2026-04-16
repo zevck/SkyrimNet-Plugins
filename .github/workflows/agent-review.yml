@@ -3,8 +3,8 @@ name: Agent content review
 # Stage 2 of the review pipeline. Runs after validate.yml applies the
 # ready-for-agent-review label to a PR. Reads the plugin's manifest and
 # content files, concatenates the base agent prompt with the correct
-# SFW/NSFW appendix, and sends batched chunks to gpt-4o-mini via
-# GitHub Models to classify the content as approve/reject/uncertain.
+# SFW/NSFW appendix, and sends batched chunks to the configured model
+# via GitHub Models to classify the content as approve/reject/uncertain.
 #
 # This workflow never runs on PRs labeled manual-review or validation-failed.
 # See ai_docs/AGENT_REVIEW.md for the full design rationale.
@@ -64,12 +64,14 @@ jobs:
           RESULT_FILE: ${{ github.workspace }}/agent-review-result.json
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # Model is configurable via repository variables so maintainers can
-          # switch between gpt-4o-mini (default, cheap) and gpt-4o (more
-          # expensive, potentially more accurate) without editing this file.
-          AGENT_MODEL: ${{ vars.AGENT_MODEL || 'openai/gpt-4o-mini' }}
+          # switch models without editing this file. Defaults to gpt-4.1 which
+          # tested at 98.8% accuracy across 81 runs on dark lore, NSFW, and
+          # rejection scenarios. gpt-4o-mini is NOT recommended — it ignores
+          # system prompt instructions and rejects lore-appropriate content.
+          AGENT_MODEL: ${{ vars.AGENT_MODEL || 'openai/gpt-4.1' }}
           # Chunk size in bytes — files are grouped at file boundaries into
-          # chunks of this size. 80 KB leaves room for the ~5 KB system prompt
-          # plus output tokens in gpt-4o-mini's 128K context.
+          # chunks of this size. 80 KB leaves room for the system prompt
+          # plus output tokens within the model's context window.
           AGENT_CHUNK_SIZE_BYTES: "81920"
         run: |
           node "$BASE_DIR/.github/scripts/agent-review.mjs"
