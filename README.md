@@ -1,6 +1,6 @@
 # SkyrimNet Plugins
 
-Community marketplace for [SkyrimNet](https://github.com/MinLL/SkyrimNet) plugins.
+Community marketplace for SkyrimNet plugins.
 
 A **plugin** is a bundle containing any combination of:
 
