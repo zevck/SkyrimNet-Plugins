@@ -10,5 +10,8 @@
   "tags": ["lore", "companions", "knowledge", "werewolf"],
   "nsfw": false,
   "mods": [],
-  "requirements": []
+  "requirements": [],
+  "files": [
+    "knowledge/companions-history.sknpack"
+  ]
 }

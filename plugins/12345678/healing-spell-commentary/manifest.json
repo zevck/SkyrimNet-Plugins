@@ -10,5 +10,9 @@
   "tags": ["magic", "dialogue", "restoration"],
   "nsfw": false,
   "mods": [],
-  "requirements": []
+  "requirements": [],
+  "files": [
+    "prompts/submodules/user_final_instructions/healer-awareness.prompt",
+    "triggers/on-healing-cast.yaml"
+  ]
 }

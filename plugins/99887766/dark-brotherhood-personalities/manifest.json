@@ -12,5 +12,12 @@
   "mods": [
     { "name": "Skyrim", "file": "skyrim.esm", "required": true }
   ],
-  "requirements": ["SkyrimNet 0.19+"]
+  "requirements": ["SkyrimNet 0.19+"],
+  "files": [
+    "prompts/submodules/character_bio/astrid-personality.prompt",
+    "prompts/submodules/character_bio/cicero-personality.prompt",
+    "prompts/submodules/character_bio/nazir-personality.prompt",
+    "triggers/contract-complete.yaml",
+    "knowledge/db-lore.sknpack"
+  ]
 }
