@@ -1,0 +1,18 @@
+{% if render_mode == "full" or render_mode == "thoughts" or render_mode == "dialogue_target" %}
+
+{{ "## Injuries3" }}
+{% set injury_level = get_faction_rank(actorUUID, "FDC_WoundDuration_faction") %}
+
+{% if injury_level > 0 %}
+	{% if injury_level >= 12 %}
+		{{ decnpc(actorUUID).name }} is suffering from severe wounds that have nearly killed them.
+	{% elif injury_level >= 8 %}
+		{{ decnpc(actorUUID).name }} bears serious wounds. Their movements are labored and painful.
+	{% elif injury_level >= 4 %}
+		{{ decnpc(actorUUID).name }} bears wounds that cause constant discomfort.
+	{% else %}
+		{{ decnpc(actorUUID).name }} has minor wounds.
+	{% endif %}
+{% endif %}
+
+{% endif %}

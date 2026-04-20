@@ -1,0 +1,57 @@
+{% if render_mode == "full" or render_mode == "thoughts" or render_mode == "dialogue_target" %}
+
+{# Check if this specific NPC is the one riding with the player #}
+{% set pillionRider = get_quest_alias_actor("rshCore", "PillionRider") %}
+{% set isRideActive = get_global_value("rshAuthorizeRide") > 0 %}
+
+{% if pillionRider and isRideActive and pillionRider.uuid == npc.UUID %}
+{# Get riding configuration globals #}
+{% set reversePosition = get_global_value("rshGVReversePositions") > 0 %}
+{% set sidesaddleFemale = get_global_value("rshGVRideSidesaddle") > 0 %}
+{% set sidesaddleMale = get_global_value("rshGVRideSidesaddleM") > 0 %}
+{% set npcGender = decnpc(npc.UUID).sex %}
+
+{% if reversePosition %}
+{% if (npcGender == "Male" and sidesaddleMale) or (npcGender == "Female" and sidesaddleFemale) %}
+**[Riding together on horseback]** {{ decnpc(npc.UUID).name }} is currently sharing a horse with {{ player.name }}, riding sidesaddle in front while {{ player.name }} sits behind {{ decnpc(npc.UUID).objectivePronoun }}.
+{% else %}
+**[Riding together on horseback]** {{ decnpc(npc.UUID).name }} is currently sharing a horse with {{ player.name }}, riding in front while {{ player.name }} sits behind {{ decnpc(npc.UUID).objectivePronoun }}.
+{% endif %}
+{% elif (npcGender == "Male" and sidesaddleMale) or (npcGender == "Female" and sidesaddleFemale) %}
+**[Riding together on horseback]** {{ decnpc(npc.UUID).name }} is currently sharing a horse with {{ player.name }}, riding sidesaddle behind {{ player.name }}.
+{% else %}
+**[Riding together on horseback]** {{ decnpc(npc.UUID).name }} is currently sharing a horse with {{ player.name }}, sitting close behind {{ player.name }}.
+{% endif %}
+
+{% endif %}
+
+{# Check if this NPC is being carried #}
+{% set carriedPerson = get_quest_alias_actor("rshCore", "FollowerBanditCarried") %}
+{% set banditSync = get_global_value("rshBanditSync") > 0 %}
+
+{% if carriedPerson and banditSync and carriedPerson.uuid == npc.UUID %}
+{% set npcInfo = decnpc(npc.UUID) %}
+{% if not npcInfo.isDead %}
+{% if carriedPerson.inventory_has_item("rshBanditOnPlayerToken") %}
+**[You are being carried]** You are currently slung over {{ player.name }}'s shoulder, helpless and being carried.
+{% elif carriedPerson.inventory_has_item("rshBanditOnPlayerHorseToken") %}
+**[You are being carried]** You are currently slung over {{ player.name }}'s horse, helpless and being transported.
+{% endif %}
+{% endif %}
+{% endif %}
+
+{# Check if the player is carrying someone #}
+{% if actorUUID == player.UUID %}
+{% set carriedPerson = get_quest_alias_actor("rshCore", "FollowerBanditCarried") %}
+{% set banditSync = get_global_value("rshBanditSync") > 0 %}
+{% if carriedPerson and banditSync and inventory_has_item("rshBanditOnPlayerToken") %}
+{% set carriedInfo = decnpc(carriedPerson.uuid) %}
+{% if carriedInfo.isDead %}
+**[Carrying someone]** {{ player.name }} is currently carrying {{ carriedPerson.name }}'s lifeless body slung over {{ decnpc(player.UUID).possessivePronoun }} shoulder.
+{% else %}
+**[Carrying someone]** {{ player.name }} is currently carrying {{ carriedPerson.name }} slung over {{ decnpc(player.UUID).possessivePronoun }} shoulder.
+{% endif %}
+{% endif %}
+{% endif %}
+
+{% endif %}

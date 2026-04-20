@@ -1,0 +1,34 @@
+{
+  "type": "bundle",
+  "title": "Prompt Collection",
+  "tagline": "A collection of prompts to integrated with various mods",
+  "description": "# Prompt Collection\nThis collection includes prompts for the following mods:\n- Wounds\n- Dirt & Blood\n- Follower Injury & Death Chance\n- Stress & Fear\n- Simple Hunting Overhaul\n- Shoulder or Saddle",
+  "author_id": 181273891,
+  "author": "Zevick",
+  "version": "1.0.0",
+  "skyrimnet_version": "0-19-0-0",
+  "tags": [
+    "collection",
+    "prompts",
+    "mod integration",
+    "wounds",
+    "dirt",
+    "blood",
+    "stress",
+    "fear",
+    "hunting",
+    "shoulder",
+    "saddle"
+  ],
+  "nsfw": false,
+  "mods": [],
+  "requirements": [],
+  "files": [
+    "prompts/submodules/character_bio/1010_dirtandblood.prompt",
+    "prompts/submodules/character_bio/2702_wounds.prompt",
+    "prompts/submodules/character_bio/2703_follower_injury.prompt",
+    "prompts/submodules/character_bio/2704_stress_fear.prompt",
+    "prompts/submodules/character_bio/2706_simple_hunting.prompt",
+    "prompts/submodules/character_bio/2707_ride_sharing.prompt"
+  ]
+}

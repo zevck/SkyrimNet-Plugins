@@ -1,0 +1,769 @@
+{% if render_mode == "dialogue_target" or (render_mode == "thoughts" and actorUUID == player.UUID) %}
+
+{# ====== ALL VARIABLE DECLARATIONS ====== #}
+{# LEFT ARM #}
+{% set brokenArmLeftUnsupported0 = has_magic_effect(actorUUID, "_W_EffectBrokArmLeftNoSplint_0") %}
+{% set brokenArmLeftUnsupported1 = has_magic_effect(actorUUID, "_W_EffectBrokArmLeftNoSplint_1") %}
+{% set brokenArmLeftUnsupported2 = has_magic_effect(actorUUID, "_W_EffectBrokArmLeftNoSplint_2") %}
+{% set brokenArmLeftUnsupported3 = has_magic_effect(actorUUID, "_W_EffectBrokArmLeftNoSplint_3") %}
+{% set brokenArmLeftUnsupported4 = has_magic_effect(actorUUID, "_W_EffectBrokArmLeftNoSplint_4") %}
+{% set brokenArmLeftSplinted0 = has_magic_effect(actorUUID, "_W_EffectBrokArmLeftSplint_0") %}
+{% set brokenArmLeftSplinted1 = has_magic_effect(actorUUID, "_W_EffectBrokArmLeftSplint_1") %}
+{% set brokenArmLeftSplinted2 = has_magic_effect(actorUUID, "_W_EffectBrokArmLeftSplint_2") %}
+{% set brokenArmLeftSplinted3 = has_magic_effect(actorUUID, "_W_EffectBrokArmLeftSplint_3") %}
+{% set brokenArmLeftSplinted4 = has_magic_effect(actorUUID, "_W_EffectBrokArmLeftSplint_4") %}
+{% set cutArmLeft0 = has_spell(actorUUID, "_W_SpellCutArmLeft_0") %}
+{% set cutArmLeft1 = has_spell(actorUUID, "_W_SpellCutArmLeft_1") %}
+{% set cutArmLeft2 = has_spell(actorUUID, "_W_SpellCutArmLeft_2") %}
+{% set cutArmLeft3 = has_spell(actorUUID, "_W_SpellCutArmLeft_3") %}
+{% set cutArmLeft4 = has_spell(actorUUID, "_W_SpellCutArmLeft_4") %}
+{% set cutArmLeft5 = has_spell(actorUUID, "_W_SpellCutArmLeft_5") %}
+{% set cutArmLeft6 = has_spell(actorUUID, "_W_SpellCutArmLeft_6") %}
+{% set cutArmLeftBandaged = get_global_value("_W_GlobalCutArmLeftBan") %}
+{% set cutArmLeftInfection = get_global_value("_W_GlobalCutArmLeftInfection") %}
+{% set cutArmLeftPacked = get_global_value("_W_GlobalCutArmLeftPac") %}
+{% set cutArmLeftCauterized = get_global_value("_W_GlobalCutArmLeftCau") %}
+{% set cutArmLeftStitched = get_global_value("_W_GlobalCutArmLeftSti") %}
+{% set bruiseArmLeft0 = has_spell(actorUUID, "_W_SpellBruisArmLeft_0") %}
+{% set bruiseArmLeft1 = has_spell(actorUUID, "_W_SpellBruisArmLeft_1") %}
+{% set bruiseArmLeft2 = has_spell(actorUUID, "_W_SpellBruisArmLeft_2") %}
+{% set bruiseArmLeft3 = has_spell(actorUUID, "_W_SpellBruisArmLeft_3") %}
+{% set bruiseArmLeft4 = has_spell(actorUUID, "_W_SpellBruisArmLeft_4") %}
+{% set bruiseArmLeft5 = has_spell(actorUUID, "_W_SpellBruisArmLeft_5") %}
+{% set bruiseArmLeft6 = has_spell(actorUUID, "_W_SpellBruisArmLeft_6") %}
+{% set bruiseArmLeft7 = has_spell(actorUUID, "_W_SpellBruisArmLeft_7") %}
+{% set bruiseArmLeft8 = has_spell(actorUUID, "_W_SpellBruisArmLeft_8") %}
+{% set bruiseArmLeft9 = has_spell(actorUUID, "_W_SpellBruisArmLeft_9") %}
+
+{# RIGHT ARM #}
+{% set brokenArmRight0 = has_magic_effect(actorUUID, "_W_EffectBrokArmRightNoSplint_0") %}
+{% set brokenArmRight1 = has_magic_effect(actorUUID, "_W_EffectBrokArmRightNoSplint_1") %}
+{% set brokenArmRight2 = has_magic_effect(actorUUID, "_W_EffectBrokArmRightNoSplint_2") %}
+{% set brokenArmRight3 = has_magic_effect(actorUUID, "_W_EffectBrokArmRightNoSplint_3") %}
+{% set brokenArmRight4 = has_magic_effect(actorUUID, "_W_EffectBrokArmRightNoSplint_4") %}
+{% set brokenArmRightSplinted0 = has_magic_effect(actorUUID, "_W_EffectBrokArmRightSplint_0") %}
+{% set brokenArmRightSplinted1 = has_magic_effect(actorUUID, "_W_EffectBrokArmRightSplint_1") %}
+{% set brokenArmRightSplinted2 = has_magic_effect(actorUUID, "_W_EffectBrokArmRightSplint_2") %}
+{% set brokenArmRightSplinted3 = has_magic_effect(actorUUID, "_W_EffectBrokArmRightSplint_3") %}
+{% set brokenArmRightSplinted4 = has_magic_effect(actorUUID, "_W_EffectBrokArmRightSplint_4") %}
+{% set cutArmRight0 = has_spell(actorUUID, "_W_SpellCutArmRight_0") %}
+{% set cutArmRight1 = has_spell(actorUUID, "_W_SpellCutArmRight_1") %}
+{% set cutArmRight2 = has_spell(actorUUID, "_W_SpellCutArmRight_2") %}
+{% set cutArmRight3 = has_spell(actorUUID, "_W_SpellCutArmRight_3") %}
+{% set cutArmRight4 = has_spell(actorUUID, "_W_SpellCutArmRight_4") %}
+{% set cutArmRight5 = has_spell(actorUUID, "_W_SpellCutArmRight_5") %}
+{% set cutArmRight6 = has_spell(actorUUID, "_W_SpellCutArmRight_6") %}
+{% set cutArmRightBandaged = get_global_value("_W_GlobalCutArmRightBan") %}
+{% set cutArmRightInfection = get_global_value("_W_GlobalCutArmRightInfection") %}
+{% set cutArmRightPacked = get_global_value("_W_GlobalCutArmRightPac") %}
+{% set cutArmRightCauterized = get_global_value("_W_GlobalCutArmRightCau") %}
+{% set cutArmRightStitched = get_global_value("_W_GlobalCutArmRightSti") %}
+{% set bruiseArmRight0 = has_spell(actorUUID, "_W_SpellBruisArmRight_0") %}
+{% set bruiseArmRight1 = has_spell(actorUUID, "_W_SpellBruisArmRight_1") %}
+{% set bruiseArmRight2 = has_spell(actorUUID, "_W_SpellBruisArmRight_2") %}
+{% set bruiseArmRight3 = has_spell(actorUUID, "_W_SpellBruisArmRight_3") %}
+{% set bruiseArmRight4 = has_spell(actorUUID, "_W_SpellBruisArmRight_4") %}
+{% set bruiseArmRight5 = has_spell(actorUUID, "_W_SpellBruisArmRight_5") %}
+{% set bruiseArmRight6 = has_spell(actorUUID, "_W_SpellBruisArmRight_6") %}
+{% set bruiseArmRight7 = has_spell(actorUUID, "_W_SpellBruisArmRight_7") %}
+{% set bruiseArmRight8 = has_spell(actorUUID, "_W_SpellBruisArmRight_8") %}
+{% set bruiseArmRight9 = has_spell(actorUUID, "_W_SpellBruisArmRight_9") %}
+
+{# RIGHT LEG #}
+{% set brokenLegRight0 = has_magic_effect(actorUUID, "_W_EffectBrokLegRightNoSplint_0") %}
+{% set brokenLegRight1 = has_magic_effect(actorUUID, "_W_EffectBrokLegRightNoSplint_1") %}
+{% set brokenLegRight2 = has_magic_effect(actorUUID, "_W_EffectBrokLegRightNoSplint_2") %}
+{% set brokenLegRight3 = has_magic_effect(actorUUID, "_W_EffectBrokLegRightNoSplint_3") %}
+{% set brokenLegRight4 = has_magic_effect(actorUUID, "_W_EffectBrokLegRightNoSplint_4") %}
+{% set brokenLegRightSplinted0 = has_magic_effect(actorUUID, "_W_EffectBrokLegRightSplint_0") %}
+{% set brokenLegRightSplinted1 = has_magic_effect(actorUUID, "_W_EffectBrokLegRightSplint_1") %}
+{% set brokenLegRightSplinted2 = has_magic_effect(actorUUID, "_W_EffectBrokLegRightSplint_2") %}
+{% set brokenLegRightSplinted3 = has_magic_effect(actorUUID, "_W_EffectBrokLegRightSplint_3") %}
+{% set brokenLegRightSplinted4 = has_magic_effect(actorUUID, "_W_EffectBrokLegRightSplint_4") %}
+{% set cutLegRight0 = has_spell(actorUUID, "_W_SpellCutLegRight_0") %}
+{% set cutLegRight1 = has_spell(actorUUID, "_W_SpellCutLegRight_1") %}
+{% set cutLegRight2 = has_spell(actorUUID, "_W_SpellCutLegRight_2") %}
+{% set cutLegRight3 = has_spell(actorUUID, "_W_SpellCutLegRight_3") %}
+{% set cutLegRight4 = has_spell(actorUUID, "_W_SpellCutLegRight_4") %}
+{% set cutLegRight5 = has_spell(actorUUID, "_W_SpellCutLegRight_5") %}
+{% set cutLegRight6 = has_spell(actorUUID, "_W_SpellCutLegRight_6") %}
+{% set cutLegRightBandaged = get_global_value("_W_GlobalCutLegRightBan") %}
+{% set cutLegRightInfection = get_global_value("_W_GlobalCutLegRightInfection") %}
+{% set cutLegRightPacked = get_global_value("_W_GlobalCutLegRightPac") %}
+{% set cutLegRightCauterized = get_global_value("_W_GlobalCutLegRightCau") %}
+{% set cutLegRightStitched = get_global_value("_W_GlobalCutLegRightSti") %}
+{% set bruiseLegRight0 = has_spell(actorUUID, "_W_SpellBruisLegRight_0") %}
+{% set bruiseLegRight1 = has_spell(actorUUID, "_W_SpellBruisLegRight_1") %}
+{% set bruiseLegRight2 = has_spell(actorUUID, "_W_SpellBruisLegRight_2") %}
+{% set bruiseLegRight3 = has_spell(actorUUID, "_W_SpellBruisLegRight_3") %}
+{% set bruiseLegRight4 = has_spell(actorUUID, "_W_SpellBruisLegRight_4") %}
+{% set bruiseLegRight5 = has_spell(actorUUID, "_W_SpellBruisLegRight_5") %}
+{% set bruiseLegRight6 = has_spell(actorUUID, "_W_SpellBruisLegRight_6") %}
+{% set bruiseLegRight7 = has_spell(actorUUID, "_W_SpellBruisLegRight_7") %}
+{% set bruiseLegRight8 = has_spell(actorUUID, "_W_SpellBruisLegRight_8") %}
+{% set bruiseLegRight9 = has_spell(actorUUID, "_W_SpellBruisLegRight_9") %}
+
+{# LEFT LEG #}
+{% set brokenLegLeft0 = has_magic_effect(actorUUID, "_W_EffectBrokLegLeftNoSplint_0") %}
+{% set brokenLegLeft1 = has_magic_effect(actorUUID, "_W_EffectBrokLegLeftNoSplint_1") %}
+{% set brokenLegLeft2 = has_magic_effect(actorUUID, "_W_EffectBrokLegLeftNoSplint_2") %}
+{% set brokenLegLeft3 = has_magic_effect(actorUUID, "_W_EffectBrokLegLeftNoSplint_3") %}
+{% set brokenLegLeft4 = has_magic_effect(actorUUID, "_W_EffectBrokLegLeftNoSplint_4") %}
+{% set brokenLegLeftSplinted0 = has_magic_effect(actorUUID, "_W_EffectBrokLegLeftSplint_0") %}
+{% set brokenLegLeftSplinted1 = has_magic_effect(actorUUID, "_W_EffectBrokLegLeftSplint_1") %}
+{% set brokenLegLeftSplinted2 = has_magic_effect(actorUUID, "_W_EffectBrokLegLeftSplint_2") %}
+{% set brokenLegLeftSplinted3 = has_magic_effect(actorUUID, "_W_EffectBrokLegLeftSplint_3") %}
+{% set brokenLegLeftSplinted4 = has_magic_effect(actorUUID, "_W_EffectBrokLegLeftSplint_4") %}
+{% set cutLegLeft0 = has_spell(actorUUID, "_W_SpellCutLegLeft_0") %}
+{% set cutLegLeft1 = has_spell(actorUUID, "_W_SpellCutLegLeft_1") %}
+{% set cutLegLeft2 = has_spell(actorUUID, "_W_SpellCutLegLeft_2") %}
+{% set cutLegLeft3 = has_spell(actorUUID, "_W_SpellCutLegLeft_3") %}
+{% set cutLegLeft4 = has_spell(actorUUID, "_W_SpellCutLegLeft_4") %}
+{% set cutLegLeft5 = has_spell(actorUUID, "_W_SpellCutLegLeft_5") %}
+{% set cutLegLeft6 = has_spell(actorUUID, "_W_SpellCutLegLeft_6") %}
+{% set cutLegLeftBandaged = get_global_value("_W_GlobalCutLegLeftBan") %}
+{% set cutLegLeftInfection = get_global_value("_W_GlobalCutLegLeftInfection") %}
+{% set cutLegLeftPacked = get_global_value("_W_GlobalCutLegLeftPac") %}
+{% set cutLegLeftCauterized = get_global_value("_W_GlobalCutLegLeftCau") %}
+{% set cutLegLeftStitched = get_global_value("_W_GlobalCutLegLeftSti") %}
+{% set bruiseLegLeft0 = has_spell(actorUUID, "_W_SpellBruisLegLeft_0") %}
+{% set bruiseLegLeft1 = has_spell(actorUUID, "_W_SpellBruisLegLeft_1") %}
+{% set bruiseLegLeft2 = has_spell(actorUUID, "_W_SpellBruisLegLeft_2") %}
+{% set bruiseLegLeft3 = has_spell(actorUUID, "_W_SpellBruisLegLeft_3") %}
+{% set bruiseLegLeft4 = has_spell(actorUUID, "_W_SpellBruisLegLeft_4") %}
+{% set bruiseLegLeft5 = has_spell(actorUUID, "_W_SpellBruisLegLeft_5") %}
+{% set bruiseLegLeft6 = has_spell(actorUUID, "_W_SpellBruisLegLeft_6") %}
+{% set bruiseLegLeft7 = has_spell(actorUUID, "_W_SpellBruisLegLeft_7") %}
+{% set bruiseLegLeft8 = has_spell(actorUUID, "_W_SpellBruisLegLeft_8") %}
+{% set bruiseLegLeft9 = has_spell(actorUUID, "_W_SpellBruisLegLeft_9") %}
+
+{# TORSO #}
+{% set brokenRib0 = has_spell(actorUUID, "_W_SpellBrokTorso_0") %}
+{% set brokenRib1 = has_spell(actorUUID, "_W_SpellBrokTorso_1") %}
+{% set brokenRib2 = has_spell(actorUUID, "_W_SpellBrokTorso_2") %}
+{% set brokenRib3 = has_spell(actorUUID, "_W_SpellBrokTorso_3") %}
+{% set brokenRib4 = has_spell(actorUUID, "_W_SpellBrokTorso_4") %}
+{% set cutTorso0 = has_spell(actorUUID, "_W_SpellCutTorso_0") %}
+{% set cutTorso1 = has_spell(actorUUID, "_W_SpellCutTorso_1") %}
+{% set cutTorso2 = has_spell(actorUUID, "_W_SpellCutTorso_2") %}
+{% set cutTorso3 = has_spell(actorUUID, "_W_SpellCutTorso_3") %}
+{% set cutTorso4 = has_spell(actorUUID, "_W_SpellCutTorso_4") %}
+{% set cutTorso5 = has_spell(actorUUID, "_W_SpellCutTorso_5") %}
+{% set cutTorso6 = has_spell(actorUUID, "_W_SpellCutTorso_6") %}
+{% set cutTorsoBandaged = get_global_value("_W_GlobalCutTorsoBan") %}
+{% set cutTorsoInfection = get_global_value("_W_GlobalCutTorsoInfection") %}
+{% set cutTorsoPacked = get_global_value("_W_GlobalCutTorsoPac") %}
+{% set cutTorsoCauterized = get_global_value("_W_GlobalCutTorsoCau") %}
+{% set cutTorsoStitched = get_global_value("_W_GlobalCutTorsoSti") %}
+{% set bruiseTorso0 = has_spell(actorUUID, "_W_SpellBruisTorso_0") %}
+{% set bruiseTorso1 = has_spell(actorUUID, "_W_SpellBruisTorso_1") %}
+{% set bruiseTorso2 = has_spell(actorUUID, "_W_SpellBruisTorso_2") %}
+{% set bruiseTorso3 = has_spell(actorUUID, "_W_SpellBruisTorso_3") %}
+{% set bruiseTorso4 = has_spell(actorUUID, "_W_SpellBruisTorso_4") %}
+{% set bruiseTorso5 = has_spell(actorUUID, "_W_SpellBruisTorso_5") %}
+{% set bruiseTorso6 = has_spell(actorUUID, "_W_SpellBruisTorso_6") %}
+{% set bruiseTorso7 = has_spell(actorUUID, "_W_SpellBruisTorso_7") %}
+{% set bruiseTorso8 = has_spell(actorUUID, "_W_SpellBruisTorso_8") %}
+{% set bruiseTorso9 = has_spell(actorUUID, "_W_SpellBruisTorso_9") %}
+
+{# HEAD #}
+{% set brokenHead0 = has_spell(actorUUID, "_W_SpellBrokHead_0") %}
+{% set brokenHead1 = has_spell(actorUUID, "_W_SpellBrokHead_1") %}
+{% set brokenHead2 = has_spell(actorUUID, "_W_SpellBrokHead_2") %}
+{% set brokenHead3 = has_spell(actorUUID, "_W_SpellBrokHead_3") %}
+{% set brokenHead4 = has_spell(actorUUID, "_W_SpellBrokHead_4") %}
+{% set concussion0 = has_spell(actorUUID, "_W_SpellConc_0") %}
+{% set concussion1 = has_spell(actorUUID, "_W_SpellConc_1") %}
+{% set concussion2 = has_spell(actorUUID, "_W_SpellConc_2") %}
+{% set concussion3 = has_spell(actorUUID, "_W_SpellConc_3") %}
+{% set concussion4 = has_spell(actorUUID, "_W_SpellConc_4") %}
+{% set bruiseHead0 = has_spell(actorUUID, "_W_SpellBruisHead_0") %}
+{% set bruiseHead1 = has_spell(actorUUID, "_W_SpellBruisHead_1") %}
+{% set bruiseHead2 = has_spell(actorUUID, "_W_SpellBruisHead_2") %}
+{% set bruiseHead3 = has_spell(actorUUID, "_W_SpellBruisHead_3") %}
+{% set bruiseHead4 = has_spell(actorUUID, "_W_SpellBruisHead_4") %}
+{% set bruiseHead5 = has_spell(actorUUID, "_W_SpellBruisHead_5") %}
+{% set bruiseHead6 = has_spell(actorUUID, "_W_SpellBruisHead_6") %}
+{% set bruiseHead7 = has_spell(actorUUID, "_W_SpellBruisHead_7") %}
+{% set bruiseHead8 = has_spell(actorUUID, "_W_SpellBruisHead_8") %}
+{% set bruiseHead9 = has_spell(actorUUID, "_W_SpellBruisHead_9") %}
+
+{{ "## Wounded Status" }}
+
+{# Count bruised body parts for summary #}
+{% set bruisedParts = 0 %}
+{% if bruiseArmLeft0 or bruiseArmLeft1 or bruiseArmLeft2 or bruiseArmLeft3 or bruiseArmLeft4 or bruiseArmLeft5 or bruiseArmLeft6 or bruiseArmLeft7 or bruiseArmLeft8 or bruiseArmLeft9 %}{% set bruisedParts = bruisedParts + 1 %}{% endif %}
+{% if bruiseArmRight0 or bruiseArmRight1 or bruiseArmRight2 or bruiseArmRight3 or bruiseArmRight4 or bruiseArmRight5 or bruiseArmRight6 or bruiseArmRight7 or bruiseArmRight8 or bruiseArmRight9 %}{% set bruisedParts = bruisedParts + 1 %}{% endif %}
+{% if bruiseLegLeft0 or bruiseLegLeft1 or bruiseLegLeft2 or bruiseLegLeft3 or bruiseLegLeft4 or bruiseLegLeft5 or bruiseLegLeft6 or bruiseLegLeft7 or bruiseLegLeft8 or bruiseLegLeft9 %}{% set bruisedParts = bruisedParts + 1 %}{% endif %}
+{% if bruiseLegRight0 or bruiseLegRight1 or bruiseLegRight2 or bruiseLegRight3 or bruiseLegRight4 or bruiseLegRight5 or bruiseLegRight6 or bruiseLegRight7 or bruiseLegRight8 or bruiseLegRight9 %}{% set bruisedParts = bruisedParts + 1 %}{% endif %}
+{% if bruiseTorso0 or bruiseTorso1 or bruiseTorso2 or bruiseTorso3 or bruiseTorso4 or bruiseTorso5 or bruiseTorso6 or bruiseTorso7 or bruiseTorso8 or bruiseTorso9 %}{% set bruisedParts = bruisedParts + 1 %}{% endif %}
+{% if bruiseHead0 or bruiseHead1 or bruiseHead2 or bruiseHead3 or bruiseHead4 or bruiseHead5 or bruiseHead6 or bruiseHead7 or bruiseHead8 or bruiseHead9 %}{% set bruisedParts = bruisedParts + 1 %}{% endif %}
+
+{# Max bruise severity across all body parts #}
+{% set maxBruiseSeverity = 0 %}
+{% if bruiseHead9 or bruiseArmLeft9 or bruiseArmRight9 or bruiseLegLeft9 or bruiseLegRight9 or bruiseTorso9 %}{% set maxBruiseSeverity = 9 %}
+{% elif bruiseHead8 or bruiseArmLeft8 or bruiseArmRight8 or bruiseLegLeft8 or bruiseLegRight8 or bruiseTorso8 %}{% set maxBruiseSeverity = 8 %}
+{% elif bruiseHead7 or bruiseArmLeft7 or bruiseArmRight7 or bruiseLegLeft7 or bruiseLegRight7 or bruiseTorso7 %}{% set maxBruiseSeverity = 7 %}
+{% elif bruiseHead6 or bruiseArmLeft6 or bruiseArmRight6 or bruiseLegLeft6 or bruiseLegRight6 or bruiseTorso6 %}{% set maxBruiseSeverity = 6 %}
+{% elif bruiseHead5 or bruiseArmLeft5 or bruiseArmRight5 or bruiseLegLeft5 or bruiseLegRight5 or bruiseTorso5 %}{% set maxBruiseSeverity = 5 %}
+{% elif bruiseHead4 or bruiseArmLeft4 or bruiseArmRight4 or bruiseLegLeft4 or bruiseLegRight4 or bruiseTorso4 %}{% set maxBruiseSeverity = 4 %}
+{% elif bruiseHead3 or bruiseArmLeft3 or bruiseArmRight3 or bruiseLegLeft3 or bruiseLegRight3 or bruiseTorso3 %}{% set maxBruiseSeverity = 3 %}
+{% elif bruiseHead2 or bruiseArmLeft2 or bruiseArmRight2 or bruiseLegLeft2 or bruiseLegRight2 or bruiseTorso2 %}{% set maxBruiseSeverity = 2 %}
+{% elif bruiseHead1 or bruiseArmLeft1 or bruiseArmRight1 or bruiseLegLeft1 or bruiseLegRight1 or bruiseTorso1 %}{% set maxBruiseSeverity = 1 %}
+{% elif bruiseHead0 or bruiseArmLeft0 or bruiseArmRight0 or bruiseLegLeft0 or bruiseLegRight0 or bruiseTorso0 %}{% set maxBruiseSeverity = 0 %}
+{% endif %}
+
+{# Determine bruise description #}
+{% set bruiseDescription = "" %}
+{% if bruisedParts >= 5 %}
+  {% if maxBruiseSeverity >= 7 %}
+    {% set bruiseDescription = "Their body is covered all over in severe bruises" %}
+  {% elif maxBruiseSeverity >= 4 %}
+    {% set bruiseDescription = "Their body is covered all over in considerable bruises" %}
+  {% else %}
+    {% set bruiseDescription = "Their body is covered all over in bruises" %}
+  {% endif %}
+{% elif bruisedParts >= 3 %}
+  {% if maxBruiseSeverity >= 7 %}
+    {% set bruiseDescription = "They have severe bruising across multiple areas" %}
+  {% elif maxBruiseSeverity >= 4 %}
+    {% set bruiseDescription = "They have significant bruising across multiple areas" %}
+  {% else %}
+    {% set bruiseDescription = "They have noticeable bruising across multiple areas" %}
+  {% endif %}
+{% elif bruisedParts > 0 %}
+  {% if maxBruiseSeverity >= 7 %}
+    {% set bruiseDescription = "They have severe bruises" %}
+  {% elif maxBruiseSeverity >= 4 %}
+    {% set bruiseDescription = "They have considerable bruises" %}
+  {% else %}
+    {% set bruiseDescription = "They have minor bruises" %}
+  {% endif %}
+{% endif %}
+
+{# Count cuts and determine max cut severity #}
+{% set cutCount = 0 %}
+{% if cutArmLeft0 or cutArmLeft1 or cutArmLeft2 or cutArmLeft3 or cutArmLeft4 or cutArmLeft5 or cutArmLeft6 %}{% set cutCount = cutCount + 1 %}{% endif %}
+{% if cutArmRight0 or cutArmRight1 or cutArmRight2 or cutArmRight3 or cutArmRight4 or cutArmRight5 or cutArmRight6 %}{% set cutCount = cutCount + 1 %}{% endif %}
+{% if cutLegLeft0 or cutLegLeft1 or cutLegLeft2 or cutLegLeft3 or cutLegLeft4 or cutLegLeft5 or cutLegLeft6 %}{% set cutCount = cutCount + 1 %}{% endif %}
+{% if cutLegRight0 or cutLegRight1 or cutLegRight2 or cutLegRight3 or cutLegRight4 or cutLegRight5 or cutLegRight6 %}{% set cutCount = cutCount + 1 %}{% endif %}
+{% if cutTorso0 or cutTorso1 or cutTorso2 or cutTorso3 or cutTorso4 or cutTorso5 or cutTorso6 %}{% set cutCount = cutCount + 1 %}{% endif %}
+
+{% set maxCutSeverity = 0 %}
+{% if cutArmLeft6 or cutArmRight6 or cutLegLeft6 or cutLegRight6 or cutTorso6 %}{% set maxCutSeverity = 6 %}
+{% elif cutArmLeft5 or cutArmRight5 or cutLegLeft5 or cutLegRight5 or cutTorso5 %}{% set maxCutSeverity = 5 %}
+{% elif cutArmLeft4 or cutArmRight4 or cutLegLeft4 or cutLegRight4 or cutTorso4 %}{% set maxCutSeverity = 4 %}
+{% elif cutArmLeft3 or cutArmRight3 or cutLegLeft3 or cutLegRight3 or cutTorso3 %}{% set maxCutSeverity = 3 %}
+{% elif cutArmLeft2 or cutArmRight2 or cutLegLeft2 or cutLegRight2 or cutTorso2 %}{% set maxCutSeverity = 2 %}
+{% elif cutArmLeft1 or cutArmRight1 or cutLegLeft1 or cutLegRight1 or cutTorso1 %}{% set maxCutSeverity = 1 %}
+{% elif cutArmLeft0 or cutArmRight0 or cutLegLeft0 or cutLegRight0 or cutTorso0 %}{% set maxCutSeverity = 0 %}
+{% endif %}
+
+{# Count infected wounds and determine max infection severity #}
+{% set infectedCount = 0 %}
+{% if (cutArmLeft0 or cutArmLeft1 or cutArmLeft2 or cutArmLeft3 or cutArmLeft4 or cutArmLeft5 or cutArmLeft6) and cutArmLeftInfection > 0 %}{% set infectedCount = infectedCount + 1 %}{% endif %}
+{% if (cutArmRight0 or cutArmRight1 or cutArmRight2 or cutArmRight3 or cutArmRight4 or cutArmRight5 or cutArmRight6) and cutArmRightInfection > 0 %}{% set infectedCount = infectedCount + 1 %}{% endif %}
+{% if (cutLegLeft0 or cutLegLeft1 or cutLegLeft2 or cutLegLeft3 or cutLegLeft4 or cutLegLeft5 or cutLegLeft6) and cutLegLeftInfection > 0 %}{% set infectedCount = infectedCount + 1 %}{% endif %}
+{% if (cutLegRight0 or cutLegRight1 or cutLegRight2 or cutLegRight3 or cutLegRight4 or cutLegRight5 or cutLegRight6) and cutLegRightInfection > 0 %}{% set infectedCount = infectedCount + 1 %}{% endif %}
+{% if (cutTorso0 or cutTorso1 or cutTorso2 or cutTorso3 or cutTorso4 or cutTorso5 or cutTorso6) and cutTorsoInfection > 0 %}{% set infectedCount = infectedCount + 1 %}{% endif %}
+
+{% set maxInfection = 0 %}
+{% if (cutArmLeft0 or cutArmLeft1 or cutArmLeft2 or cutArmLeft3 or cutArmLeft4 or cutArmLeft5 or cutArmLeft6) and cutArmLeftInfection > maxInfection %}{% set maxInfection = cutArmLeftInfection %}{% endif %}
+{% if (cutArmRight0 or cutArmRight1 or cutArmRight2 or cutArmRight3 or cutArmRight4 or cutArmRight5 or cutArmRight6) and cutArmRightInfection > maxInfection %}{% set maxInfection = cutArmRightInfection %}{% endif %}
+{% if (cutLegLeft0 or cutLegLeft1 or cutLegLeft2 or cutLegLeft3 or cutLegLeft4 or cutLegLeft5 or cutLegLeft6) and cutLegLeftInfection > maxInfection %}{% set maxInfection = cutLegLeftInfection %}{% endif %}
+{% if (cutLegRight0 or cutLegRight1 or cutLegRight2 or cutLegRight3 or cutLegRight4 or cutLegRight5 or cutLegRight6) and cutLegRightInfection > maxInfection %}{% set maxInfection = cutLegRightInfection %}{% endif %}
+{% if (cutTorso0 or cutTorso1 or cutTorso2 or cutTorso3 or cutTorso4 or cutTorso5 or cutTorso6) and cutTorsoInfection > maxInfection %}{% set maxInfection = cutTorsoInfection %}{% endif %}
+
+{# Build infection description based on severity and count #}
+{% set infectionDescription = "" %}
+{% if infectedCount > 0 %}
+  {% if maxInfection >= 3 %}
+    {% if infectedCount >= 3 %}
+      {% set infectionDescription = "They're burning with fever from widespread infection, their skin flushed and clammy, clearly weakened by sepsis" %}
+    {% else %}
+      {% set infectionDescription = "They're running a high fever, flushed and sweating from serious infection" %}
+    {% endif %}
+  {% elif maxInfection >= 2 %}
+    {% if infectedCount >= 3 %}
+      {% set infectionDescription = "They're visibly feverish with multiple infected wounds, their body fighting to ward off illness" %}
+    {% else %}
+      {% set infectionDescription = "There's a noticeable flush to their skin—they're running a fever from infection" %}
+    {% endif %}
+  {% else %}
+    {% if infectedCount >= 3 %}
+      {% set infectionDescription = "Their skin is slightly warm—several wounds are showing signs of infection" %}
+    {% else %}
+      {% set infectionDescription = "They show early signs of fever from infected wounds" %}
+    {% endif %}
+  {% endif %}
+{% endif %}
+
+{# Count severely broken limbs (level 3-4) #}
+{% set severeLimbBreaks = 0 %}
+{% if brokenArmLeftUnsupported3 or brokenArmLeftUnsupported4 or brokenArmLeftSplinted3 or brokenArmLeftSplinted4 %}
+  {% set severeLimbBreaks = severeLimbBreaks + 1 %}
+{% endif %}
+{% if brokenArmRight3 or brokenArmRight4 or brokenArmRightSplinted3 or brokenArmRightSplinted4 %}
+  {% set severeLimbBreaks = severeLimbBreaks + 1 %}
+{% endif %}
+{% if brokenLegLeft3 or brokenLegLeft4 or brokenLegLeftSplinted3 or brokenLegLeftSplinted4 %}
+  {% set severeLimbBreaks = severeLimbBreaks + 1 %}
+{% endif %}
+{% if brokenLegRight3 or brokenLegRight4 or brokenLegRightSplinted3 or brokenLegRightSplinted4 %}
+  {% set severeLimbBreaks = severeLimbBreaks + 1 %}
+{% endif %}
+
+{% if severeLimbBreaks >= 2 or brokenRib4 or (brokenHead3 or brokenHead4) or (cutCount >= 3 and maxCutSeverity >= 5) %}
+{{ decnpc(actorUUID).name }} is in dire condition, their body wracked with catastrophic injuries from a savage encounter.
+{% if concussion4 %}They move in a daze, severely disoriented and stumbling, barely able to focus on anything around them.
+{% elif concussion3 %}Their movements are unsteady, their eyes glazed and unfocused as they struggle against the spinning in their head.
+{% elif concussion2 %}A noticeable fog clouds their mind—they move and act with deliberate slowness and hesitation.
+{% elif concussion1 %}There's a lingering daze in their eyes, though they push through it.
+{% elif concussion0 %}A faint fuzziness lingers in their expression.
+{% endif %}{% if (brokenRib0 or brokenRib1 or brokenRib2 or brokenRib3 or brokenRib4) and (brokenHead0 or brokenHead1 or brokenHead2 or brokenHead3 or brokenHead4) %}{% if brokenRib4 and (brokenHead3 or brokenHead4) %}Their ribs are crushed and their skull is severely fractured—they're breathing in ragged gasps and showing signs of catastrophic head trauma.
+{% elif brokenRib4 %}Their ribs are crushed, forcing ragged, pained gasps with each breath, and their skull shows visible fracturing.
+{% elif (brokenHead3 or brokenHead4) and (brokenRib2 or brokenRib3) %}Their skull is severely fractured and their breathing is strained from broken ribs—both injuries are serious.
+{% elif (brokenRib2 or brokenRib3) %}They have broken ribs that strain their breathing and visible fractures on their skull.
+{% else %}They have cracked ribs causing discomfort with each breath and fractures visible on their skull.
+{% endif %}{% elif brokenRib0 or brokenRib1 or brokenRib2 or brokenRib3 or brokenRib4 %}{% if brokenRib4 %}Their breathing comes in ragged, pained gasps—their ribs are crushed, each inhale clearly agonizing.
+{% elif brokenRib3 %}Their breathing is shallow and strained, the pain of severely broken ribs etched into every movement.
+{% elif brokenRib2 %}Each breath they take is visibly strained, their broken ribs making even basic movement painful.
+{% elif brokenRib1 %}They wince slightly with each breath, their fractured ribs a constant, nagging pain.
+{% elif brokenRib0 %}There's a subtle tension in their chest, a lingering discomfort from cracked ribs.
+{% endif %}{% elif brokenHead0 or brokenHead1 or brokenHead2 or brokenHead3 or brokenHead4 %}{% if brokenHead4 %}Their skull shows severe, catastrophic fracturing across multiple areas.
+{% elif brokenHead3 %}Their head bears severe fracturing, the breaks widespread and substantial.
+{% elif brokenHead2 %}Visible fractures mark their skull in multiple places.
+{% elif brokenHead1 %}Their head shows a clear fracture running across the skull.
+{% elif brokenHead0 %}A thin crack is visible in their skull.
+{% endif %}{% endif %}{% if (brokenArmLeftUnsupported2 or brokenArmLeftUnsupported3 or brokenArmLeftUnsupported4) and (brokenArmRight2 or brokenArmRight3 or brokenArmRight4) and (brokenLegLeft2 or brokenLegLeft3 or brokenLegLeft4) and (brokenLegRight2 or brokenLegRight3 or brokenLegRight4) %}All four of their limbs are shattered—they can barely stand or defend themselves, utterly helpless.
+{% elif (brokenArmLeftUnsupported2 or brokenArmLeftUnsupported3 or brokenArmLeftUnsupported4) and (brokenArmRight2 or brokenArmRight3 or brokenArmRight4) and (brokenLegLeft2 or brokenLegLeft3 or brokenLegLeft4) %}Their left leg and both arms are badly broken—they can barely walk and cannot wield weapons.
+{% elif (brokenArmLeftUnsupported2 or brokenArmLeftUnsupported3 or brokenArmLeftUnsupported4) and (brokenArmRight2 or brokenArmRight3 or brokenArmRight4) and (brokenLegRight2 or brokenLegRight3 or brokenLegRight4) %}Their right leg and both arms are badly broken—they can barely walk and cannot wield weapons.
+{% elif (brokenLegLeft2 or brokenLegLeft3 or brokenLegLeft4) and (brokenLegRight2 or brokenLegRight3 or brokenLegRight4) and (brokenArmLeftUnsupported2 or brokenArmLeftUnsupported3 or brokenArmLeftUnsupported4) %}Their left arm and both legs are badly broken—they can barely walk and combat is severely compromised.
+{% elif (brokenLegLeft2 or brokenLegLeft3 or brokenLegLeft4) and (brokenLegRight2 or brokenLegRight3 or brokenLegRight4) and (brokenArmRight2 or brokenArmRight3 or brokenArmRight4) %}Their right arm and both legs are badly broken—they can barely walk and combat is severely compromised.
+{% elif (brokenArmLeftUnsupported2 or brokenArmLeftUnsupported3 or brokenArmLeftUnsupported4) and (brokenArmRight2 or brokenArmRight3 or brokenArmRight4) %}Both of their arms are badly broken and hang useless—they cannot wield weapons or defend themselves.
+{% elif (brokenLegLeft2 or brokenLegLeft3 or brokenLegLeft4) and (brokenLegRight2 or brokenLegRight3 or brokenLegRight4) %}Both of their legs are badly broken—they can barely stand, moving only with great difficulty.
+{% elif (brokenArmLeftUnsupported2 or brokenArmLeftUnsupported3 or brokenArmLeftUnsupported4) and (brokenLegLeft2 or brokenLegLeft3 or brokenLegLeft4) %}Their left arm and left leg are badly broken, severely limiting both mobility and combat ability.
+{% elif (brokenArmLeftUnsupported2 or brokenArmLeftUnsupported3 or brokenArmLeftUnsupported4) and (brokenLegRight2 or brokenLegRight3 or brokenLegRight4) %}Their left arm and right leg are badly broken, severely limiting both mobility and combat ability.
+{% elif (brokenArmRight2 or brokenArmRight3 or brokenArmRight4) and (brokenLegLeft2 or brokenLegLeft3 or brokenLegLeft4) %}Their right arm and left leg are badly broken, severely limiting both mobility and combat ability.
+{% elif (brokenArmRight2 or brokenArmRight3 or brokenArmRight4) and (brokenLegRight2 or brokenLegRight3 or brokenLegRight4) %}Their right arm and right leg are badly broken, severely limiting both mobility and combat ability.
+{% elif brokenArmLeftUnsupported2 or brokenArmLeftUnsupported3 or brokenArmLeftUnsupported4 %}Their left arm is badly broken, making combat extremely difficult.
+{% elif brokenArmRight2 or brokenArmRight3 or brokenArmRight4 %}Their right arm is badly broken, making combat extremely difficult.
+{% elif brokenLegLeft2 or brokenLegLeft3 or brokenLegLeft4 %}Their left leg is badly broken, forcing them to limp heavily.
+{% elif brokenLegRight2 or brokenLegRight3 or brokenLegRight4 %}Their right leg is badly broken, forcing them to limp heavily.
+{% endif %}{% if bruisedParts > 0 %}{{ bruiseDescription }}.
+{% endif %}{% if infectedCount > 0 %}{{ infectionDescription }}.
+{% endif %}
+
+{% elif (severeLimbBreaks >= 1 or brokenRib2 or concussion3 or concussion4 or brokenHead2) or (bruisedParts >= 5 and maxBruiseSeverity >= 7) or maxCutSeverity >= 4 or (cutCount >= 3 and maxCutSeverity >= 2) %}
+{{ decnpc(actorUUID).name }} is visibly battered, bearing severe wounds from brutal combat.
+{% if concussion4 %} They move in a daze, severely disoriented and stumbling, barely able to focus on anything around them.{% elif concussion3 %} Their movements are unsteady, their eyes glazed and unfocused as they struggle against the spinning in their head.
+{% elif concussion2 %} A noticeable fog clouds their mind—they move and act with deliberate slowness and hesitation.
+{% elif concussion1 %} There's a lingering daze in their eyes, though they push through it.
+{% elif concussion0 %} A faint fuzziness lingers in their expression.
+{% endif %}{% if (brokenRib0 or brokenRib1 or brokenRib2 or brokenRib3 or brokenRib4) and (brokenHead0 or brokenHead1 or brokenHead2 or brokenHead3 or brokenHead4) %}{% if brokenRib4 and (brokenHead3 or brokenHead4) %} Their ribs are crushed and their skull is severely fractured—they're breathing in ragged gasps and showing signs of catastrophic head trauma.
+{% elif brokenRib4 %} Their ribs are crushed, forcing ragged, pained gasps with each breath, and their skull shows visible fracturing.
+{% elif (brokenHead3 or brokenHead4) and (brokenRib2 or brokenRib3) %} Their skull is severely fractured and their breathing is strained from broken ribs—both injuries are serious.
+{% elif (brokenRib2 or brokenRib3) %} They have broken ribs that strain their breathing and visible fractures on their skull.
+{% else %} They have cracked ribs causing discomfort with each breath and fractures visible on their skull.
+{% endif %}{% elif brokenRib0 or brokenRib1 or brokenRib2 or brokenRib3 or brokenRib4 %}{% if brokenRib4 %} Their breathing comes in ragged, pained gasps—their ribs are crushed, each inhale clearly agonizing.
+{% elif brokenRib3 %} Their breathing is shallow and strained, the pain of severely broken ribs etched into every movement.
+{% elif brokenRib2 %} Each breath they take is visibly strained, their broken ribs making even basic movement painful.
+{% elif brokenRib1 %} They wince slightly with each breath, their fractured ribs a constant, nagging pain.
+{% elif brokenRib0 %} There's a subtle tension in their chest, a lingering discomfort from cracked ribs.
+{% endif %}{% elif brokenHead0 or brokenHead1 or brokenHead2 or brokenHead3 or brokenHead4 %}{% if brokenHead4 %} Their skull shows severe, catastrophic fracturing across multiple areas.
+{% elif brokenHead3 %} Their head bears severe fracturing, the breaks widespread and substantial.
+{% elif brokenHead2 %} Visible fractures mark their skull in multiple places.
+{% elif brokenHead1 %} Their head shows a clear fracture running across the skull.
+{% elif brokenHead0 %} A thin crack is visible in their skull.
+{% endif %}{% endif %}{% if (brokenArmLeftUnsupported2 or brokenArmLeftUnsupported3 or brokenArmLeftUnsupported4) and (brokenArmRight2 or brokenArmRight3 or brokenArmRight4) and (brokenLegLeft2 or brokenLegLeft3 or brokenLegLeft4) and (brokenLegRight2 or brokenLegRight3 or brokenLegRight4) %} All four of their limbs are shattered—they can barely stand or defend themselves, utterly helpless.
+{% elif (brokenArmLeftUnsupported2 or brokenArmLeftUnsupported3 or brokenArmLeftUnsupported4) and (brokenArmRight2 or brokenArmRight3 or brokenArmRight4) and (brokenLegLeft2 or brokenLegLeft3 or brokenLegLeft4) %} Their left leg and both arms are badly broken—they can barely walk and cannot wield weapons.
+{% elif (brokenArmLeftUnsupported2 or brokenArmLeftUnsupported3 or brokenArmLeftUnsupported4) and (brokenArmRight2 or brokenArmRight3 or brokenArmRight4) and (brokenLegRight2 or brokenLegRight3 or brokenLegRight4) %} Their right leg and both arms are badly broken—they can barely walk and cannot wield weapons.
+{% elif (brokenLegLeft2 or brokenLegLeft3 or brokenLegLeft4) and (brokenLegRight2 or brokenLegRight3 or brokenLegRight4) and (brokenArmLeftUnsupported2 or brokenArmLeftUnsupported3 or brokenArmLeftUnsupported4) %} Their left arm and both legs are badly broken—they can barely walk and combat is severely compromised.
+{% elif (brokenLegLeft2 or brokenLegLeft3 or brokenLegLeft4) and (brokenLegRight2 or brokenLegRight3 or brokenLegRight4) and (brokenArmRight2 or brokenArmRight3 or brokenArmRight4) %} Their right arm and both legs are badly broken—they can barely walk and combat is severely compromised.
+{% elif (brokenArmLeftUnsupported2 or brokenArmLeftUnsupported3 or brokenArmLeftUnsupported4) and (brokenArmRight2 or brokenArmRight3 or brokenArmRight4) %} Both of their arms are badly broken and hang useless—they cannot wield weapons or defend themselves.
+{% elif (brokenLegLeft2 or brokenLegLeft3 or brokenLegLeft4) and (brokenLegRight2 or brokenLegRight3 or brokenLegRight4) %} Both of their legs are badly broken—they can barely stand, moving only with great difficulty.
+{% elif (brokenArmLeftUnsupported2 or brokenArmLeftUnsupported3 or brokenArmLeftUnsupported4) and (brokenLegLeft2 or brokenLegLeft3 or brokenLegLeft4) %} Their left arm and left leg are badly broken, severely limiting both mobility and combat ability.
+{% elif (brokenArmLeftUnsupported2 or brokenArmLeftUnsupported3 or brokenArmLeftUnsupported4) and (brokenLegRight2 or brokenLegRight3 or brokenLegRight4) %} Their left arm and right leg are badly broken, severely limiting both mobility and combat ability.
+{% elif (brokenArmRight2 or brokenArmRight3 or brokenArmRight4) and (brokenLegLeft2 or brokenLegLeft3 or brokenLegLeft4) %} Their right arm and left leg are badly broken, severely limiting both mobility and combat ability.
+{% elif (brokenArmRight2 or brokenArmRight3 or brokenArmRight4) and (brokenLegRight2 or brokenLegRight3 or brokenLegRight4) %} Their right arm and right leg are badly broken, severely limiting both mobility and combat ability.
+{% elif brokenArmLeftUnsupported2 or brokenArmLeftUnsupported3 or brokenArmLeftUnsupported4 %} Their left arm is badly broken, making combat extremely difficult.
+{% elif brokenArmRight2 or brokenArmRight3 or brokenArmRight4 %} Their right arm is badly broken, making combat extremely difficult.
+{% elif brokenLegLeft2 or brokenLegLeft3 or brokenLegLeft4 %} Their left leg is badly broken, forcing them to limp heavily.
+{% elif brokenLegRight2 or brokenLegRight3 or brokenLegRight4 %} Their right leg is badly broken, forcing them to limp heavily.
+{% endif %}{% if bruisedParts > 0 %} {{ bruiseDescription }}.
+{% endif %}{% if infectedCount > 0 %} {{ infectionDescription }}.
+{% endif %}
+
+{% elif (brokenArmLeftUnsupported0 or brokenArmLeftUnsupported1 or brokenArmRight0 or brokenArmRight1 or brokenLegLeft0 or brokenLegLeft1 or brokenLegRight0 or brokenLegRight1 or brokenRib0 or brokenArmLeftSplinted0 or brokenArmLeftSplinted1 or brokenArmRightSplinted0 or brokenArmRightSplinted1 or brokenLegLeftSplinted0 or brokenLegLeftSplinted1 or brokenLegRightSplinted0 or brokenLegRightSplinted1 or brokenRib0 or brokenRib1 or concussion0 or concussion1 or concussion2 or brokenHead0 or brokenHead1) or (bruisedParts >= 3 and maxBruiseSeverity >= 4) or (cutCount >= 2 and maxCutSeverity >= 2) or maxCutSeverity >= 3 %}
+{{ decnpc(actorUUID).name }} bears the marks of recent combat, injured but still functional.
+{% if concussion4 %} They move in a daze, severely disoriented and stumbling, barely able to focus on anything around them.{% elif concussion3 %} Their movements are unsteady, their eyes glazed and unfocused as they struggle against the spinning in their head.
+{% elif concussion2 %} A noticeable fog clouds their mind—they move and act with deliberate slowness and hesitation.
+{% elif concussion1 %} There's a lingering daze in their eyes, though they push through it.
+{% elif concussion0 %} A faint fuzziness lingers in their expression.
+{% endif %}{% if (brokenRib0 or brokenRib1 or brokenRib2 or brokenRib3 or brokenRib4) and (brokenHead0 or brokenHead1 or brokenHead2 or brokenHead3 or brokenHead4) %}{% if brokenRib4 and (brokenHead3 or brokenHead4) %} Their ribs are crushed and their skull is severely fractured—they're breathing in ragged gasps and showing signs of catastrophic head trauma.
+{% elif brokenRib4 %} Their ribs are crushed, forcing ragged, pained gasps with each breath, and their skull shows visible fracturing.
+{% elif (brokenHead3 or brokenHead4) and (brokenRib2 or brokenRib3) %} Their skull is severely fractured and their breathing is strained from broken ribs—both injuries are serious.
+{% elif (brokenRib2 or brokenRib3) %} They have broken ribs that strain their breathing and visible fractures on their skull.
+{% else %} They have cracked ribs causing discomfort with each breath and fractures visible on their skull.
+{% endif %}{% elif brokenRib0 or brokenRib1 or brokenRib2 or brokenRib3 or brokenRib4 %}{% if brokenRib4 %} Their breathing comes in ragged, pained gasps—their ribs are crushed, each inhale clearly agonizing.
+{% elif brokenRib3 %} Their breathing is shallow and strained, the pain of severely broken ribs etched into every movement.
+{% elif brokenRib2 %} Each breath they take is visibly strained, their broken ribs making even basic movement painful.
+{% elif brokenRib1 %} They wince slightly with each breath, their fractured ribs a constant, nagging pain.
+{% elif brokenRib0 %} There's a subtle tension in their chest, a lingering discomfort from cracked ribs.
+{% endif %}{% elif brokenHead0 or brokenHead1 or brokenHead2 or brokenHead3 or brokenHead4 %}{% if brokenHead4 %} Their skull shows severe, catastrophic fracturing across multiple areas.
+{% elif brokenHead3 %} Their head bears severe fracturing, the breaks widespread and substantial.
+{% elif brokenHead2 %} Visible fractures mark their skull in multiple places.
+{% elif brokenHead1 %} Their head shows a clear fracture running across the skull.
+{% elif brokenHead0 %} A thin crack is visible in their skull.
+{% endif %}{% endif %}{% if (brokenArmLeftUnsupported2 or brokenArmLeftUnsupported3 or brokenArmLeftUnsupported4) and (brokenArmRight2 or brokenArmRight3 or brokenArmRight4) and (brokenLegLeft2 or brokenLegLeft3 or brokenLegLeft4) and (brokenLegRight2 or brokenLegRight3 or brokenLegRight4) %} All four of their limbs are shattered—they can barely stand or defend themselves, utterly helpless.
+{% elif (brokenArmLeftUnsupported2 or brokenArmLeftUnsupported3 or brokenArmLeftUnsupported4) and (brokenArmRight2 or brokenArmRight3 or brokenArmRight4) and (brokenLegLeft2 or brokenLegLeft3 or brokenLegLeft4) %} Their left leg and both arms are badly broken—they can barely walk and cannot wield weapons.
+{% elif (brokenArmLeftUnsupported2 or brokenArmLeftUnsupported3 or brokenArmLeftUnsupported4) and (brokenArmRight2 or brokenArmRight3 or brokenArmRight4) and (brokenLegRight2 or brokenLegRight3 or brokenLegRight4) %} Their right leg and both arms are badly broken—they can barely walk and cannot wield weapons.
+{% elif (brokenLegLeft2 or brokenLegLeft3 or brokenLegLeft4) and (brokenLegRight2 or brokenLegRight3 or brokenLegRight4) and (brokenArmLeftUnsupported2 or brokenArmLeftUnsupported3 or brokenArmLeftUnsupported4) %} Their left arm and both legs are badly broken—they can barely walk and combat is severely compromised.
+{% elif (brokenLegLeft2 or brokenLegLeft3 or brokenLegLeft4) and (brokenLegRight2 or brokenLegRight3 or brokenLegRight4) and (brokenArmRight2 or brokenArmRight3 or brokenArmRight4) %} Their right arm and both legs are badly broken—they can barely walk and combat is severely compromised.
+{% elif (brokenArmLeftUnsupported2 or brokenArmLeftUnsupported3 or brokenArmLeftUnsupported4) and (brokenArmRight2 or brokenArmRight3 or brokenArmRight4) %} Both of their arms are badly broken and hang useless—they cannot wield weapons or defend themselves.
+{% elif (brokenLegLeft2 or brokenLegLeft3 or brokenLegLeft4) and (brokenLegRight2 or brokenLegRight3 or brokenLegRight4) %} Both of their legs are badly broken—they can barely stand, moving only with great difficulty.
+{% elif (brokenArmLeftUnsupported2 or brokenArmLeftUnsupported3 or brokenArmLeftUnsupported4) and (brokenLegLeft2 or brokenLegLeft3 or brokenLegLeft4) %} Their left arm and left leg are badly broken, severely limiting both mobility and combat ability.
+{% elif (brokenArmLeftUnsupported2 or brokenArmLeftUnsupported3 or brokenArmLeftUnsupported4) and (brokenLegRight2 or brokenLegRight3 or brokenLegRight4) %} Their left arm and right leg are badly broken, severely limiting both mobility and combat ability.
+{% elif (brokenArmRight2 or brokenArmRight3 or brokenArmRight4) and (brokenLegLeft2 or brokenLegLeft3 or brokenLegLeft4) %} Their right arm and left leg are badly broken, severely limiting both mobility and combat ability.
+{% elif (brokenArmRight2 or brokenArmRight3 or brokenArmRight4) and (brokenLegRight2 or brokenLegRight3 or brokenLegRight4) %} Their right arm and right leg are badly broken, severely limiting both mobility and combat ability.
+{% elif brokenArmLeftUnsupported2 or brokenArmLeftUnsupported3 or brokenArmLeftUnsupported4 %} Their left arm is badly broken, making combat extremely difficult.
+{% elif brokenArmRight2 or brokenArmRight3 or brokenArmRight4 %} Their right arm is badly broken, making combat extremely difficult.
+{% elif brokenLegLeft2 or brokenLegLeft3 or brokenLegLeft4 %} Their left leg is badly broken, forcing them to limp heavily.
+{% elif brokenLegRight2 or brokenLegRight3 or brokenLegRight4 %} Their right leg is badly broken, forcing them to limp heavily.
+{% endif %}{% if bruisedParts > 0 %} {{ bruiseDescription }}.
+{% endif %}{% if infectedCount > 0 %} {{ infectionDescription }}.
+{% endif %}
+
+{% elif bruisedParts >= 1 or cutCount >= 1 %}
+{{ decnpc(actorUUID).name }} shows minor signs of wear from conflict, lightly battered.
+{% if concussion4 %} They move in a daze, severely disoriented and stumbling, barely able to focus on anything around them.{% elif concussion3 %} Their movements are unsteady, their eyes glazed and unfocused as they struggle against the spinning in their head.
+{% elif concussion2 %} A noticeable fog clouds their mind—they move and act with deliberate slowness and hesitation.
+{% elif concussion1 %} There's a lingering daze in their eyes, though they push through it.
+{% elif concussion0 %} A faint fuzziness lingers in their expression.
+{% endif %}{% if (brokenRib0 or brokenRib1 or brokenRib2 or brokenRib3 or brokenRib4) and (brokenHead0 or brokenHead1 or brokenHead2 or brokenHead3 or brokenHead4) %}{% if brokenRib4 and (brokenHead3 or brokenHead4) %} Their ribs are crushed and their skull is severely fractured—they're breathing in ragged gasps and showing signs of catastrophic head trauma.
+{% elif brokenRib4 %} Their ribs are crushed, forcing ragged, pained gasps with each breath, and their skull shows visible fracturing.
+{% elif (brokenHead3 or brokenHead4) and (brokenRib2 or brokenRib3) %} Their skull is severely fractured and their breathing is strained from broken ribs—both injuries are serious.
+{% elif (brokenRib2 or brokenRib3) %} They have broken ribs that strain their breathing and visible fractures on their skull.
+{% else %} They have cracked ribs causing discomfort with each breath and fractures visible on their skull.
+{% endif %}{% elif brokenRib0 or brokenRib1 or brokenRib2 or brokenRib3 or brokenRib4 %}{% if brokenRib4 %} Their breathing comes in ragged, pained gasps—their ribs are crushed, each inhale clearly agonizing.
+{% elif brokenRib3 %} Their breathing is shallow and strained, the pain of severely broken ribs etched into every movement.
+{% elif brokenRib2 %} Each breath they take is visibly strained, their broken ribs making even basic movement painful.
+{% elif brokenRib1 %} They wince slightly with each breath, their fractured ribs a constant, nagging pain.
+{% elif brokenRib0 %} There's a subtle tension in their chest, a lingering discomfort from cracked ribs.
+{% endif %}{% elif brokenHead0 or brokenHead1 or brokenHead2 or brokenHead3 or brokenHead4 %}{% if brokenHead4 %} Their skull shows severe, catastrophic fracturing across multiple areas.
+{% elif brokenHead3 %} Their head bears severe fracturing, the breaks widespread and substantial.
+{% elif brokenHead2 %} Visible fractures mark their skull in multiple places.
+{% elif brokenHead1 %} Their head shows a clear fracture running across the skull.
+{% elif brokenHead0 %} A thin crack is visible in their skull.
+{% endif %}{% endif %}{% if (brokenArmLeftUnsupported2 or brokenArmLeftUnsupported3 or brokenArmLeftUnsupported4) and (brokenArmRight2 or brokenArmRight3 or brokenArmRight4) and (brokenLegLeft2 or brokenLegLeft3 or brokenLegLeft4) and (brokenLegRight2 or brokenLegRight3 or brokenLegRight4) %} All four of their limbs are shattered—they can barely stand or defend themselves, utterly helpless.
+{% elif (brokenArmLeftUnsupported2 or brokenArmLeftUnsupported3 or brokenArmLeftUnsupported4) and (brokenArmRight2 or brokenArmRight3 or brokenArmRight4) and (brokenLegLeft2 or brokenLegLeft3 or brokenLegLeft4) %} Their left leg and both arms are badly broken—they can barely walk and cannot wield weapons.
+{% elif (brokenArmLeftUnsupported2 or brokenArmLeftUnsupported3 or brokenArmLeftUnsupported4) and (brokenArmRight2 or brokenArmRight3 or brokenArmRight4) and (brokenLegRight2 or brokenLegRight3 or brokenLegRight4) %} Their right leg and both arms are badly broken—they can barely walk and cannot wield weapons.
+{% elif (brokenLegLeft2 or brokenLegLeft3 or brokenLegLeft4) and (brokenLegRight2 or brokenLegRight3 or brokenLegRight4) and (brokenArmLeftUnsupported2 or brokenArmLeftUnsupported3 or brokenArmLeftUnsupported4) %} Their left arm and both legs are badly broken—they can barely walk and combat is severely compromised.
+{% elif (brokenLegLeft2 or brokenLegLeft3 or brokenLegLeft4) and (brokenLegRight2 or brokenLegRight3 or brokenLegRight4) and (brokenArmRight2 or brokenArmRight3 or brokenArmRight4) %} Their right arm and both legs are badly broken—they can barely walk and combat is severely compromised.
+{% elif (brokenArmLeftUnsupported2 or brokenArmLeftUnsupported3 or brokenArmLeftUnsupported4) and (brokenArmRight2 or brokenArmRight3 or brokenArmRight4) %} Both of their arms are badly broken and hang useless—they cannot wield weapons or defend themselves.
+{% elif (brokenLegLeft2 or brokenLegLeft3 or brokenLegLeft4) and (brokenLegRight2 or brokenLegRight3 or brokenLegRight4) %} Both of their legs are badly broken—they can barely stand, moving only with great difficulty.
+{% elif (brokenArmLeftUnsupported2 or brokenArmLeftUnsupported3 or brokenArmLeftUnsupported4) and (brokenLegLeft2 or brokenLegLeft3 or brokenLegLeft4) %} Their left arm and left leg are badly broken, severely limiting both mobility and combat ability.
+{% elif (brokenArmLeftUnsupported2 or brokenArmLeftUnsupported3 or brokenArmLeftUnsupported4) and (brokenLegRight2 or brokenLegRight3 or brokenLegRight4) %} Their left arm and right leg are badly broken, severely limiting both mobility and combat ability.
+{% elif (brokenArmRight2 or brokenArmRight3 or brokenArmRight4) and (brokenLegLeft2 or brokenLegLeft3 or brokenLegLeft4) %} Their right arm and left leg are badly broken, severely limiting both mobility and combat ability.
+{% elif (brokenArmRight2 or brokenArmRight3 or brokenArmRight4) and (brokenLegRight2 or brokenLegRight3 or brokenLegRight4) %} Their right arm and right leg are badly broken, severely limiting both mobility and combat ability.
+{% elif brokenArmLeftUnsupported2 or brokenArmLeftUnsupported3 or brokenArmLeftUnsupported4 %} Their left arm is badly broken, making combat extremely difficult.
+{% elif brokenArmRight2 or brokenArmRight3 or brokenArmRight4 %} Their right arm is badly broken, making combat extremely difficult.
+{% elif brokenLegLeft2 or brokenLegLeft3 or brokenLegLeft4 %} Their left leg is badly broken, forcing them to limp heavily.
+{% elif brokenLegRight2 or brokenLegRight3 or brokenLegRight4 %} Their right leg is badly broken, forcing them to limp heavily.
+{% endif %}{% if bruisedParts > 0 %} {{ bruiseDescription }}.
+{% endif %}{% if infectedCount > 0 %} {{ infectionDescription }}.
+{% endif %}
+
+{% else %}
+{{ decnpc(actorUUID).name }} appears relatively unscathed.{% if infectedCount > 0 %} {{ infectionDescription }}.
+{% endif %}
+{% endif %}
+
+{{ "# Left Arm Status" }}
+{% if brokenArmLeftUnsupported0 or brokenArmLeftUnsupported1 or brokenArmLeftUnsupported2 or brokenArmLeftUnsupported3 or brokenArmLeftUnsupported4 %}
+  {% if brokenArmLeftUnsupported0 %}
+UNSUPPORTED: {{ decnpc(actorUUID).name }} has a cracked left arm.
+  {% elif brokenArmLeftUnsupported1 %}
+UNSUPPORTED: {{ decnpc(actorUUID).name }} has a fractured left arm.
+  {% elif brokenArmLeftUnsupported2 %}
+UNSUPPORTED: {{ decnpc(actorUUID).name }} has a broken left arm.
+  {% elif brokenArmLeftUnsupported3 %}
+UNSUPPORTED: {{ decnpc(actorUUID).name }} has a severely broken left arm.
+  {% elif brokenArmLeftUnsupported4 %}
+UNSUPPORTED: {{ decnpc(actorUUID).name }} has a crushed left arm.
+  {% endif %}
+{% elif brokenArmLeftSplinted0 or brokenArmLeftSplinted1 or brokenArmLeftSplinted2 or brokenArmLeftSplinted3 or brokenArmLeftSplinted4 %}
+  {% if brokenArmLeftSplinted0 %}
+SPLINTED: {{ decnpc(actorUUID).name }}'s cracked left arm is splinted.
+  {% elif brokenArmLeftSplinted1 %}
+SPLINTED: {{ decnpc(actorUUID).name }}'s fractured left arm is splinted.
+  {% elif brokenArmLeftSplinted2 %}
+SPLINTED: {{ decnpc(actorUUID).name }}'s broken left arm is splinted.
+  {% elif brokenArmLeftSplinted3 %}
+SPLINTED: {{ decnpc(actorUUID).name }}'s severely broken left arm is splinted.
+  {% elif brokenArmLeftSplinted4 %}
+SPLINTED: {{ decnpc(actorUUID).name }}'s crushed left arm is splinted.
+  {% endif %}
+{% endif %}
+
+{# CUTS #}
+{% if cutArmLeft0 or cutArmLeft1 or cutArmLeft2 or cutArmLeft3 or cutArmLeft4 or cutArmLeft5 or cutArmLeft6 %}
+  {% if cutArmLeftBandaged == 0 %}
+    {% if cutArmLeft0 %}
+OPEN WOUND: {{ decnpc(actorUUID).name }} has a{% if cutArmLeftInfection > 0 %} infected{% endif %}{% if cutArmLeftStitched > 0 %}, stitched{% endif %}{% if cutArmLeftCauterized > 0 %}, cauterized{% endif %}{% if cutArmLeftPacked > 0 %}, packed{% endif %} minor cut on their left arm.
+    {% elif cutArmLeft1 %}
+OPEN WOUND: {{ decnpc(actorUUID).name }} has a{% if cutArmLeftInfection > 0 %} infected{% endif %}{% if cutArmLeftStitched > 0 %}, stitched{% endif %}{% if cutArmLeftCauterized > 0 %}, cauterized{% endif %}{% if cutArmLeftPacked > 0 %}, packed{% endif %} large cut on their left arm.
+    {% elif cutArmLeft2 %}
+OPEN WOUND: {{ decnpc(actorUUID).name }} has a{% if cutArmLeftInfection > 0 %} infected{% endif %}{% if cutArmLeftStitched > 0 %}, stitched{% endif %}{% if cutArmLeftCauterized > 0 %}, cauterized{% endif %}{% if cutArmLeftPacked > 0 %}, packed{% endif %} narrow gash on their left arm.
+    {% elif cutArmLeft3 %}
+OPEN WOUND: {{ decnpc(actorUUID).name }} has a{% if cutArmLeftInfection > 0 %} infected{% endif %}{% if cutArmLeftStitched > 0 %}, stitched{% endif %}{% if cutArmLeftCauterized > 0 %}, cauterized{% endif %}{% if cutArmLeftPacked > 0 %}, packed{% endif %} gash on their left arm.
+    {% elif cutArmLeft4 %}
+OPEN WOUND: {{ decnpc(actorUUID).name }} has a{% if cutArmLeftInfection > 0 %} infected{% endif %}{% if cutArmLeftStitched > 0 %}, stitched{% endif %}{% if cutArmLeftCauterized > 0 %}, cauterized{% endif %}{% if cutArmLeftPacked > 0 %}, packed{% endif %} large gash on their left arm.
+    {% elif cutArmLeft5 %}
+OPEN WOUND: {{ decnpc(actorUUID).name }} has a{% if cutArmLeftInfection > 0 %} infected{% endif %}{% if cutArmLeftStitched > 0 %}, stitched{% endif %}{% if cutArmLeftCauterized > 0 %}, cauterized{% endif %}{% if cutArmLeftPacked > 0 %}, packed{% endif %} huge gash on their left arm.
+    {% elif cutArmLeft6 %}
+OPEN WOUND: {{ decnpc(actorUUID).name }}'s left arm is{% if cutArmLeftInfection > 0 %} infected,{% endif %}{% if cutArmLeftStitched > 0 %} stitched,{% endif %}{% if cutArmLeftCauterized > 0 %} cauterized,{% endif %}{% if cutArmLeftPacked > 0 %} packed,{% endif %} virtually mutilated, their flesh shredded.
+    {% endif %}
+
+  {% elif cutArmLeftBandaged == 2 %}
+FRESH BANDAGE: {{ decnpc(actorUUID).name }}'s left arm is bandaged{% if cutArmLeftStitched > 0 %}, stitched{% endif %}{% if cutArmLeftCauterized > 0 %}, cauterized{% endif %}{% if cutArmLeftPacked > 0 %}, packed{% endif %}.
+
+  {% elif cutArmLeftBandaged == 1 %}
+DIRTY BANDAGE: {{ decnpc(actorUUID).name }}'s left arm bandage needs to be replaced.
+
+  {% endif %}
+{% endif %}
+
+{{ "# Right Arm Status" }}
+
+{# BROKEN BONES #}
+{% if brokenArmRight0 or brokenArmRight1 or brokenArmRight2 or brokenArmRight3 or brokenArmRight4 %}
+  {% if brokenArmRight0 %}
+UNSUPPORTED: {{ decnpc(actorUUID).name }} has a cracked right arm.
+  {% elif brokenArmRight1 %}
+UNSUPPORTED: {{ decnpc(actorUUID).name }} has a fractured right arm.
+  {% elif brokenArmRight2 %}
+UNSUPPORTED: {{ decnpc(actorUUID).name }} has a broken right arm.
+  {% elif brokenArmRight3 %}
+UNSUPPORTED: {{ decnpc(actorUUID).name }} has a severely broken right arm.
+  {% elif brokenArmRight4 %}
+UNSUPPORTED: {{ decnpc(actorUUID).name }} has a crushed right arm.
+  {% endif %}
+{% elif brokenArmRightSplinted0 or brokenArmRightSplinted1 or brokenArmRightSplinted2 or brokenArmRightSplinted3 or brokenArmRightSplinted4 %}
+  {% if brokenArmRightSplinted0 %}
+SPLINTED: {{ decnpc(actorUUID).name }}'s cracked right arm is splinted.
+  {% elif brokenArmRightSplinted1 %}
+SPLINTED: {{ decnpc(actorUUID).name }}'s fractured right arm is splinted.
+  {% elif brokenArmRightSplinted2 %}
+SPLINTED: {{ decnpc(actorUUID).name }}'s broken right arm is splinted.
+  {% elif brokenArmRightSplinted3 %}
+SPLINTED: {{ decnpc(actorUUID).name }}'s severely broken right arm is splinted.
+  {% elif brokenArmRightSplinted4 %}
+SPLINTED: {{ decnpc(actorUUID).name }}'s crushed right arm is splinted.
+  {% endif %}
+{% endif %}
+
+{# CUTS #}
+{% if cutArmRight0 or cutArmRight1 or cutArmRight2 or cutArmRight3 or cutArmRight4 or cutArmRight5 or cutArmRight6 %}
+  {% if cutArmRightBandaged == 0 %}
+    {% if cutArmRight0 %}
+OPEN WOUND: {{ decnpc(actorUUID).name }} has a{% if cutArmRightInfection > 0 %} infected{% endif %}{% if cutArmRightStitched > 0 %}, stitched{% endif %}{% if cutArmRightCauterized > 0 %}, cauterized{% endif %}{% if cutArmRightPacked > 0 %}, packed{% endif %} minor cut on their right arm.
+    {% elif cutArmRight1 %}
+OPEN WOUND: {{ decnpc(actorUUID).name }} has a{% if cutArmRightInfection > 0 %} infected{% endif %}{% if cutArmRightStitched > 0 %}, stitched{% endif %}{% if cutArmRightCauterized > 0 %}, cauterized{% endif %}{% if cutArmRightPacked > 0 %}, packed{% endif %} large cut on their right arm.
+    {% elif cutArmRight2 %}
+OPEN WOUND: {{ decnpc(actorUUID).name }} has a{% if cutArmRightInfection > 0 %} infected{% endif %}{% if cutArmRightStitched > 0 %}, stitched{% endif %}{% if cutArmRightCauterized > 0 %}, cauterized{% endif %}{% if cutArmRightPacked > 0 %}, packed{% endif %} narrow gash on their right arm.
+    {% elif cutArmRight3 %}
+OPEN WOUND: {{ decnpc(actorUUID).name }} has a{% if cutArmRightInfection > 0 %} infected{% endif %}{% if cutArmRightStitched > 0 %}, stitched{% endif %}{% if cutArmRightCauterized > 0 %}, cauterized{% endif %}{% if cutArmRightPacked > 0 %}, packed{% endif %} gash on their right arm.
+    {% elif cutArmRight4 %}
+OPEN WOUND: {{ decnpc(actorUUID).name }} has a{% if cutArmRightInfection > 0 %} infected{% endif %}{% if cutArmRightStitched > 0 %}, stitched{% endif %}{% if cutArmRightCauterized > 0 %}, cauterized{% endif %}{% if cutArmRightPacked > 0 %}, packed{% endif %} large gash on their right arm.
+    {% elif cutArmRight5 %}
+OPEN WOUND: {{ decnpc(actorUUID).name }} has a{% if cutArmRightInfection > 0 %} infected{% endif %}{% if cutArmRightStitched > 0 %}, stitched{% endif %}{% if cutArmRightCauterized > 0 %}, cauterized{% endif %}{% if cutArmRightPacked > 0 %}, packed{% endif %} huge gash on their right arm.
+    {% elif cutArmRight6 %}
+OPEN WOUND: {{ decnpc(actorUUID).name }}'s right arm is{% if cutArmRightInfection > 0 %} infected,{% endif %}{% if cutArmRightStitched > 0 %} stitched,{% endif %}{% if cutArmRightCauterized > 0 %} cauterized,{% endif %}{% if cutArmRightPacked > 0 %} packed,{% endif %} virtually mutilated, their flesh shredded.
+    {% endif %}
+
+  {% elif cutArmRightBandaged == 2 %}
+FRESH BANDAGE: {{ decnpc(actorUUID).name }}'s right arm is bandaged{% if cutArmRightStitched > 0 %}, stitched{% endif %}{% if cutArmRightCauterized > 0 %}, cauterized{% endif %}{% if cutArmRightPacked > 0 %}, packed{% endif %}.
+
+  {% elif cutArmRightBandaged == 1 %}
+DIRTY BANDAGE: {{ decnpc(actorUUID).name }}'s right arm bandage needs to be replaced.
+
+  {% endif %}
+{% endif %}
+
+{{ "# Right Leg Status" }}
+
+{# BROKEN BONES #}
+{% if brokenLegRight0 or brokenLegRight1 or brokenLegRight2 or brokenLegRight3 or brokenLegRight4 %}
+  {% if brokenLegRight0 %}
+UNSUPPORTED: {{ decnpc(actorUUID).name }} has a cracked right leg.
+  {% elif brokenLegRight1 %}
+UNSUPPORTED: {{ decnpc(actorUUID).name }} has a fractured right leg.
+  {% elif brokenLegRight2 %}
+UNSUPPORTED: {{ decnpc(actorUUID).name }} has a broken right leg.
+  {% elif brokenLegRight3 %}
+UNSUPPORTED: {{ decnpc(actorUUID).name }} has a severely broken right leg.
+  {% elif brokenLegRight4 %}
+UNSUPPORTED: {{ decnpc(actorUUID).name }} has a crushed right leg.
+  {% endif %}
+{% elif brokenLegRightSplinted0 or brokenLegRightSplinted1 or brokenLegRightSplinted2 or brokenLegRightSplinted3 or brokenLegRightSplinted4 %}
+  {% if brokenLegRightSplinted0 %}
+SPLINTED: {{ decnpc(actorUUID).name }}'s cracked right leg is splinted.
+  {% elif brokenLegRightSplinted1 %}
+SPLINTED: {{ decnpc(actorUUID).name }}'s fractured right leg is splinted.
+  {% elif brokenLegRightSplinted2 %}
+SPLINTED: {{ decnpc(actorUUID).name }}'s broken right leg is splinted.
+  {% elif brokenLegRightSplinted3 %}
+SPLINTED: {{ decnpc(actorUUID).name }}'s severely broken right leg is splinted.
+  {% elif brokenLegRightSplinted4 %}
+SPLINTED: {{ decnpc(actorUUID).name }}'s crushed right leg is splinted.
+  {% endif %}
+{% endif %}
+
+{# CUTS #}
+{% if cutLegRight0 or cutLegRight1 or cutLegRight2 or cutLegRight3 or cutLegRight4 or cutLegRight5 or cutLegRight6 %}
+  {% if cutLegRightBandaged == 0 %}
+    {% if cutLegRight0 %}
+OPEN WOUND: {{ decnpc(actorUUID).name }} has a{% if cutLegRightInfection > 0 %} infected{% endif %}{% if cutLegRightStitched > 0 %}, stitched{% endif %}{% if cutLegRightCauterized > 0 %}, cauterized{% endif %}{% if cutLegRightPacked > 0 %}, packed{% endif %} minor cut on their right leg.
+    {% elif cutLegRight1 %}
+OPEN WOUND: {{ decnpc(actorUUID).name }} has a{% if cutLegRightInfection > 0 %} infected{% endif %}{% if cutLegRightStitched > 0 %}, stitched{% endif %}{% if cutLegRightCauterized > 0 %}, cauterized{% endif %}{% if cutLegRightPacked > 0 %}, packed{% endif %} large cut on their right leg.
+    {% elif cutLegRight2 %}
+OPEN WOUND: {{ decnpc(actorUUID).name }} has a{% if cutLegRightInfection > 0 %} infected{% endif %}{% if cutLegRightStitched > 0 %}, stitched{% endif %}{% if cutLegRightCauterized > 0 %}, cauterized{% endif %}{% if cutLegRightPacked > 0 %}, packed{% endif %} narrow gash on their right leg.
+    {% elif cutLegRight3 %}
+OPEN WOUND: {{ decnpc(actorUUID).name }} has a{% if cutLegRightInfection > 0 %} infected{% endif %}{% if cutLegRightStitched > 0 %}, stitched{% endif %}{% if cutLegRightCauterized > 0 %}, cauterized{% endif %}{% if cutLegRightPacked > 0 %}, packed{% endif %} gash on their right leg.
+    {% elif cutLegRight4 %}
+OPEN WOUND: {{ decnpc(actorUUID).name }} has a{% if cutLegRightInfection > 0 %} infected{% endif %}{% if cutLegRightStitched > 0 %}, stitched{% endif %}{% if cutLegRightCauterized > 0 %}, cauterized{% endif %}{% if cutLegRightPacked > 0 %}, packed{% endif %} large gash on their right leg.
+    {% elif cutLegRight5 %}
+OPEN WOUND: {{ decnpc(actorUUID).name }} has a{% if cutLegRightInfection > 0 %} infected{% endif %}{% if cutLegRightStitched > 0 %}, stitched{% endif %}{% if cutLegRightCauterized > 0 %}, cauterized{% endif %}{% if cutLegRightPacked > 0 %}, packed{% endif %} huge gash on their right leg.
+    {% elif cutLegRight6 %}
+OPEN WOUND: {{ decnpc(actorUUID).name }}'s right leg is{% if cutLegRightInfection > 0 %} infected,{% endif %}{% if cutLegRightStitched > 0 %} stitched,{% endif %}{% if cutLegRightCauterized > 0 %} cauterized,{% endif %}{% if cutLegRightPacked > 0 %} packed,{% endif %} virtually mutilated, their flesh shredded.
+    {% endif %}
+
+  {% elif cutLegRightBandaged == 2 %}
+FRESH BANDAGE: {{ decnpc(actorUUID).name }}'s right leg is bandaged{% if cutLegRightStitched > 0 %}, stitched{% endif %}{% if cutLegRightCauterized > 0 %}, cauterized{% endif %}{% if cutLegRightPacked > 0 %}, packed{% endif %}.
+
+  {% elif cutLegRightBandaged == 1 %}
+DIRTY BANDAGE: {{ decnpc(actorUUID).name }}'s right leg bandage needs to be replaced.
+
+  {% endif %}
+{% endif %}
+
+{{ "# Left Leg Status" }}
+
+{# BROKEN BONES #}
+{% if brokenLegLeft0 or brokenLegLeft1 or brokenLegLeft2 or brokenLegLeft3 or brokenLegLeft4 %}
+  {% if brokenLegLeft0 %}
+UNSUPPORTED: {{ decnpc(actorUUID).name }} has a cracked left leg.
+  {% elif brokenLegLeft1 %}
+UNSUPPORTED: {{ decnpc(actorUUID).name }} has a fractured left leg.
+  {% elif brokenLegLeft2 %}
+UNSUPPORTED: {{ decnpc(actorUUID).name }} has a broken left leg.
+  {% elif brokenLegLeft3 %}
+UNSUPPORTED: {{ decnpc(actorUUID).name }} has a severely broken left leg.
+  {% elif brokenLegLeft4 %}
+UNSUPPORTED: {{ decnpc(actorUUID).name }} has a crushed left leg.
+  {% endif %}
+{% elif brokenLegLeftSplinted0 or brokenLegLeftSplinted1 or brokenLegLeftSplinted2 or brokenLegLeftSplinted3 or brokenLegLeftSplinted4 %}
+  {% if brokenLegLeftSplinted0 %}
+SPLINTED: {{ decnpc(actorUUID).name }}'s cracked left leg is splinted.
+  {% elif brokenLegLeftSplinted1 %}
+SPLINTED: {{ decnpc(actorUUID).name }}'s fractured left leg is splinted.
+  {% elif brokenLegLeftSplinted2 %}
+SPLINTED: {{ decnpc(actorUUID).name }}'s broken left leg is splinted.
+  {% elif brokenLegLeftSplinted3 %}
+SPLINTED: {{ decnpc(actorUUID).name }}'s severely broken left leg is splinted.
+  {% elif brokenLegLeftSplinted4 %}
+SPLINTED: {{ decnpc(actorUUID).name }}'s crushed left leg is splinted.
+  {% endif %}
+{% endif %}
+
+{# CUTS #}
+{% if cutLegLeft0 or cutLegLeft1 or cutLegLeft2 or cutLegLeft3 or cutLegLeft4 or cutLegLeft5 or cutLegLeft6 %}
+  {% if cutLegLeftBandaged == 0 %}
+    {% if cutLegLeft0 %}
+OPEN WOUND: {{ decnpc(actorUUID).name }} has a{% if cutLegLeftInfection > 0 %} infected{% endif %}{% if cutLegLeftStitched > 0 %}, stitched{% endif %}{% if cutLegLeftCauterized > 0 %}, cauterized{% endif %}{% if cutLegLeftPacked > 0 %}, packed{% endif %} minor cut on their left leg.
+    {% elif cutLegLeft1 %}
+OPEN WOUND: {{ decnpc(actorUUID).name }} has a{% if cutLegLeftInfection > 0 %} infected{% endif %}{% if cutLegLeftStitched > 0 %}, stitched{% endif %}{% if cutLegLeftCauterized > 0 %}, cauterized{% endif %}{% if cutLegLeftPacked > 0 %}, packed{% endif %} large cut on their left leg.
+    {% elif cutLegLeft2 %}
+OPEN WOUND: {{ decnpc(actorUUID).name }} has a{% if cutLegLeftInfection > 0 %} infected{% endif %}{% if cutLegLeftStitched > 0 %}, stitched{% endif %}{% if cutLegLeftCauterized > 0 %}, cauterized{% endif %}{% if cutLegLeftPacked > 0 %}, packed{% endif %} narrow gash on their left leg.
+    {% elif cutLegLeft3 %}
+OPEN WOUND: {{ decnpc(actorUUID).name }} has a{% if cutLegLeftInfection > 0 %} infected{% endif %}{% if cutLegLeftStitched > 0 %}, stitched{% endif %}{% if cutLegLeftCauterized > 0 %}, cauterized{% endif %}{% if cutLegLeftPacked > 0 %}, packed{% endif %} gash on their left leg.
+    {% elif cutLegLeft4 %}
+OPEN WOUND: {{ decnpc(actorUUID).name }} has a{% if cutLegLeftInfection > 0 %} infected{% endif %}{% if cutLegLeftStitched > 0 %}, stitched{% endif %}{% if cutLegLeftCauterized > 0 %}, cauterized{% endif %}{% if cutLegLeftPacked > 0 %}, packed{% endif %} large gash on their left leg.
+    {% elif cutLegLeft5 %}
+OPEN WOUND: {{ decnpc(actorUUID).name }} has a{% if cutLegLeftInfection > 0 %} infected{% endif %}{% if cutLegLeftStitched > 0 %}, stitched{% endif %}{% if cutLegLeftCauterized > 0 %}, cauterized{% endif %}{% if cutLegLeftPacked > 0 %}, packed{% endif %} huge gash on their left leg.
+    {% elif cutLegLeft6 %}
+OPEN WOUND: {{ decnpc(actorUUID).name }}'s left leg is{% if cutLegLeftInfection > 0 %} infected,{% endif %}{% if cutLegLeftStitched > 0 %} stitched,{% endif %}{% if cutLegLeftCauterized > 0 %} cauterized,{% endif %}{% if cutLegLeftPacked > 0 %} packed,{% endif %} virtually mutilated, their flesh shredded.
+    {% endif %}
+
+  {% elif cutLegLeftBandaged == 2 %}
+FRESH BANDAGE: {{ decnpc(actorUUID).name }}'s left leg is bandaged{% if cutLegLeftStitched > 0 %}, stitched{% endif %}{% if cutLegLeftCauterized > 0 %}, cauterized{% endif %}{% if cutLegLeftPacked > 0 %}, packed{% endif %}.
+
+  {% elif cutLegLeftBandaged == 1 %}
+DIRTY BANDAGE: {{ decnpc(actorUUID).name }}'s left leg bandage needs to be replaced.
+
+  {% endif %}
+{% endif %}
+  
+{{ "# Torso Status" }}
+
+{# CUTS #}
+{% if cutTorso0 or cutTorso1 or cutTorso2 or cutTorso3 or cutTorso4 or cutTorso5 or cutTorso6 %}
+  {% if cutTorsoBandaged == 0 %}
+    {% if cutTorso0 %}
+OPEN WOUND: {{ decnpc(actorUUID).name }} has a{% if cutTorsoInfection > 0 %} infected{% endif %}{% if cutTorsoStitched > 0 %}, stitched{% endif %}{% if cutTorsoCauterized > 0 %}, cauterized{% endif %}{% if cutTorsoPacked > 0 %}, packed{% endif %} minor cut on their torso.
+    {% elif cutTorso1 %}
+OPEN WOUND: {{ decnpc(actorUUID).name }} has a{% if cutTorsoInfection > 0 %} infected{% endif %}{% if cutTorsoStitched > 0 %}, stitched{% endif %}{% if cutTorsoCauterized > 0 %}, cauterized{% endif %}{% if cutTorsoPacked > 0 %}, packed{% endif %} large cut on their torso.
+    {% elif cutTorso2 %}
+OPEN WOUND: {{ decnpc(actorUUID).name }} has a{% if cutTorsoInfection > 0 %} infected{% endif %}{% if cutTorsoStitched > 0 %}, stitched{% endif %}{% if cutTorsoCauterized > 0 %}, cauterized{% endif %}{% if cutTorsoPacked > 0 %}, packed{% endif %} narrow gash on their torso.
+    {% elif cutTorso3 %}
+OPEN WOUND: {{ decnpc(actorUUID).name }} has a{% if cutTorsoInfection > 0 %} infected{% endif %}{% if cutTorsoStitched > 0 %}, stitched{% endif %}{% if cutTorsoCauterized > 0 %}, cauterized{% endif %}{% if cutTorsoPacked > 0 %}, packed{% endif %} gash on their torso.
+    {% elif cutTorso4 %}
+OPEN WOUND: {{ decnpc(actorUUID).name }} has a{% if cutTorsoInfection > 0 %} infected{% endif %}{% if cutTorsoStitched > 0 %}, stitched{% endif %}{% if cutTorsoCauterized > 0 %}, cauterized{% endif %}{% if cutTorsoPacked > 0 %}, packed{% endif %} large gash on their torso.
+    {% elif cutTorso5 %}
+OPEN WOUND: {{ decnpc(actorUUID).name }} has a{% if cutTorsoInfection > 0 %} infected{% endif %}{% if cutTorsoStitched > 0 %}, stitched{% endif %}{% if cutTorsoCauterized > 0 %}, cauterized{% endif %}{% if cutTorsoPacked > 0 %}, packed{% endif %} huge gash on their torso.
+    {% elif cutTorso6 %}
+OPEN WOUND: {{ decnpc(actorUUID).name }}'s torso is{% if cutTorsoInfection > 0 %} infected,{% endif %}{% if cutTorsoStitched > 0 %} stitched,{% endif %}{% if cutTorsoCauterized > 0 %} cauterized,{% endif %}{% if cutTorsoPacked > 0 %} packed,{% endif %} virtually mutilated, their flesh shredded.
+    {% endif %}
+
+  {% elif cutTorsoBandaged == 2 %}
+FRESH BANDAGE: {{ decnpc(actorUUID).name }}'s torso is bandaged{% if cutTorsoStitched > 0 %}, stitched{% endif %}{% if cutTorsoCauterized > 0 %}, cauterized{% endif %}{% if cutTorsoPacked > 0 %}, packed{% endif %}.
+
+  {% elif cutTorsoBandaged == 1 %}
+DIRTY BANDAGE: {{ decnpc(actorUUID).name }}'s torso bandage needs to be replaced.
+
+  {% endif %}
+{% endif %}
+
+{{ "# Treatment Status" }}
+
+{# Count total cuts and treated cuts (bandaged + clean) #}
+{% set totalCuts = 0 %}
+{% set treatedCuts = 0 %}
+{% if cutArmLeft0 or cutArmLeft1 or cutArmLeft2 or cutArmLeft3 or cutArmLeft4 or cutArmLeft5 or cutArmLeft6 %}{% set totalCuts = totalCuts + 1 %}{% if cutArmLeftBandaged == 2 and cutArmLeftInfection == 0 %}{% set treatedCuts = treatedCuts + 1 %}{% endif %}{% endif %}
+{% if cutArmRight0 or cutArmRight1 or cutArmRight2 or cutArmRight3 or cutArmRight4 or cutArmRight5 or cutArmRight6 %}{% set totalCuts = totalCuts + 1 %}{% if cutArmRightBandaged == 2 and cutArmRightInfection == 0 %}{% set treatedCuts = treatedCuts + 1 %}{% endif %}{% endif %}
+{% if cutLegLeft0 or cutLegLeft1 or cutLegLeft2 or cutLegLeft3 or cutLegLeft4 or cutLegLeft5 or cutLegLeft6 %}{% set totalCuts = totalCuts + 1 %}{% if cutLegLeftBandaged == 2 and cutLegLeftInfection == 0 %}{% set treatedCuts = treatedCuts + 1 %}{% endif %}{% endif %}
+{% if cutLegRight0 or cutLegRight1 or cutLegRight2 or cutLegRight3 or cutLegRight4 or cutLegRight5 or cutLegRight6 %}{% set totalCuts = totalCuts + 1 %}{% if cutLegRightBandaged == 2 and cutLegRightInfection == 0 %}{% set treatedCuts = treatedCuts + 1 %}{% endif %}{% endif %}
+{% if cutTorso0 or cutTorso1 or cutTorso2 or cutTorso3 or cutTorso4 or cutTorso5 or cutTorso6 %}{% set totalCuts = totalCuts + 1 %}{% if cutTorsoBandaged == 2 and cutTorsoInfection == 0 %}{% set treatedCuts = treatedCuts + 1 %}{% endif %}{% endif %}
+
+{# Count total broken limbs (not ribs/skull, those can't be splinted) and treated (splinted) #}
+{% set totalBrokenLimbs = 0 %}
+{% set treatedBrokenLimbs = 0 %}
+{% if brokenArmLeftUnsupported0 or brokenArmLeftUnsupported1 or brokenArmLeftUnsupported2 or brokenArmLeftUnsupported3 or brokenArmLeftUnsupported4 %}{% set totalBrokenLimbs = totalBrokenLimbs + 1 %}{% endif %}
+{% if brokenArmLeftSplinted0 or brokenArmLeftSplinted1 or brokenArmLeftSplinted2 or brokenArmLeftSplinted3 or brokenArmLeftSplinted4 %}{% set treatedBrokenLimbs = treatedBrokenLimbs + 1 %}{% endif %}
+{% if brokenArmRight0 or brokenArmRight1 or brokenArmRight2 or brokenArmRight3 or brokenArmRight4 %}{% set totalBrokenLimbs = totalBrokenLimbs + 1 %}{% endif %}
+{% if brokenArmRightSplinted0 or brokenArmRightSplinted1 or brokenArmRightSplinted2 or brokenArmRightSplinted3 or brokenArmRightSplinted4 %}{% set treatedBrokenLimbs = treatedBrokenLimbs + 1 %}{% endif %}
+{% if brokenLegLeft0 or brokenLegLeft1 or brokenLegLeft2 or brokenLegLeft3 or brokenLegLeft4 %}{% set totalBrokenLimbs = totalBrokenLimbs + 1 %}{% endif %}
+{% if brokenLegLeftSplinted0 or brokenLegLeftSplinted1 or brokenLegLeftSplinted2 or brokenLegLeftSplinted3 or brokenLegLeftSplinted4 %}{% set treatedBrokenLimbs = treatedBrokenLimbs + 1 %}{% endif %}
+{% if brokenLegRight0 or brokenLegRight1 or brokenLegRight2 or brokenLegRight3 or brokenLegRight4 %}{% set totalBrokenLimbs = totalBrokenLimbs + 1 %}{% endif %}
+{% if brokenLegRightSplinted0 or brokenLegRightSplinted1 or brokenLegRightSplinted2 or brokenLegRightSplinted3 or brokenLegRightSplinted4 %}{% set treatedBrokenLimbs = treatedBrokenLimbs + 1 %}{% endif %}
+
+{# Treatment status #}
+{% if (totalCuts == treatedCuts and totalBrokenLimbs == treatedBrokenLimbs) and (totalCuts > 0 or totalBrokenLimbs > 0) %}
+All of {{ decnpc(actorUUID).name }} wounds have been treated.
+{% elif totalCuts == 0 and totalBrokenLimbs == 0 %}
+{{ decnpc(actorUUID).name }} has no wounds requiring treatment.
+{% else %}
+{{ decnpc(actorUUID).name }} has untreated wounds.
+{% endif %}
+{% endif %}
