@@ -1,0 +1,55 @@
+{% if render_mode == "full" or render_mode == "thoughts" or render_mode == "dialogue_target" and actorUUID == player.UUID %}
+{{ "## Cleanliness" }}
+
+{# Check all dirt and blood magic effects #}
+{% set bDirty_Effect_Clean = has_magic_effect(actorUUID, "Dirty_Effect_Clean") %}
+{% set bDirty_Effect_Dirt1 = has_magic_effect(actorUUID, "Dirty_Effect_Dirt1") %}
+{% set bDirty_Effect_Dirt2 = has_magic_effect(actorUUID, "Dirty_Effect_Dirt2") %}
+{% set bDirty_Effect_Dirt3 = has_magic_effect(actorUUID, "Dirty_Effect_Dirt3") %}
+{% set bDirty_Effect_Dirt4 = has_magic_effect(actorUUID, "Dirty_Effect_Dirt4") %}
+{% set bDirty_Effect_Blood1 = has_magic_effect(actorUUID, "Dirty_Effect_Blood1") %}
+{% set bDirty_Effect_Blood2 = has_magic_effect(actorUUID, "Dirty_Effect_Blood2") %}
+{% set bDirty_Effect_Blood3 = has_magic_effect(actorUUID, "Dirty_Effect_Blood3") %}
+{% set bDirty_Effect_Blood4 = has_magic_effect(actorUUID, "Dirty_Effect_Blood4") %}
+{% set bDirty_NPCEffect_Blood1 = has_magic_effect(actorUUID, "Dirty_NPCEffect_Blood1") %}
+{% set bDirty_NPCEffect_Blood2 = has_magic_effect(actorUUID, "Dirty_NPCEffect_Blood2") %}
+{% set bDirty_NPCEffect_Blood3 = has_magic_effect(actorUUID, "Dirty_NPCEffect_Blood3") %}
+{% set bDirty_NPCEffect_Blood4 = has_magic_effect(actorUUID, "Dirty_NPCEffect_Blood4") %}
+{% set bDirty_NPCEffect_Blood5 = has_magic_effect(actorUUID, "Dirty_NPCEffect_Blood5") %}
+{% set bDirty_NPCEffect_Dirt2_Bandits_Fix = has_magic_effect(actorUUID, "Dirty_NPCEffect_Dirt2_Bandits_Fix") %}
+{% set bDirty_NPCEffect_Dirt2_Professional = has_magic_effect(actorUUID, "Dirty_NPCEffect_Dirt2_Professional") %}
+{% set bDirty_NPCEffect_Dirt3_Professional = has_magic_effect(actorUUID, "Dirty_NPCEffect_Dirt3_Professional") %}
+{% set bDirty_NPCEffect_Dirt3_Bandits_Fix = has_magic_effect(actorUUID, "Dirty_NPCEffect_Dirt3_Bandits_Fix") %}
+{% set bDirty_NPCEffect_Dirt4_Bandits_Fix = has_magic_effect(actorUUID, "Dirty_NPCEffect_Dirt4_Bandits_Fix") %}
+
+{# Determine primary cleanliness state using hierarchical logic #}
+{% if bDirty_Effect_Clean %}
+{{ decnpc(actorUUID).name }} is immaculately clean and well-groomed, with not a speck of dirt or grime to be seen. Their skin glows with health, and their attire has been meticulously maintained.
+{% else if bDirty_Effect_Dirt1 %}
+{{ decnpc(actorUUID).name }} is lightly dusted with dirt on their clothes and skin, the kind that comes from a normal day of travel or work in Skyrim. Nothing unusual or particularly noticeable by local standards.
+{% else if bDirty_Effect_Dirt2 or bDirty_NPCEffect_Dirt2_Bandits_Fix or bDirty_NPCEffect_Dirt2_Professional %}
+{{ decnpc(actorUUID).name }} is visibly dirty with grime accumulated across their clothing and exposed skin. Their appearance suggests it's been several days since they've had a proper bath or cleaned their garments.
+{% else if bDirty_Effect_Dirt3 or bDirty_NPCEffect_Dirt3_Professional or bDirty_NPCEffect_Dirt3_Bandits_Fix %}
+{{ decnpc(actorUUID).name }} is heavily soiled with thick layers of dirt and grime covering much of their body and clothing. A noticeable earthy smell emanates from them, and their fingernails are blackened with embedded dirt.
+{% else if bDirty_Effect_Dirt4 or bDirty_NPCEffect_Dirt4_Bandits_Fix %}
+{{ decnpc(actorUUID).name }} is absolutely caked in layers of thick, encrusted filth from head to toe. Their features are barely distinguishable beneath the grime, and they emit a powerful stench of rot, sweat, and decay that causes people nearby to wrinkle their noses in disgust.
+{% else if bDirty_Effect_Blood1 or bDirty_NPCEffect_Blood1 %}
+{{ decnpc(actorUUID).name }} is marked with scattered bloodstains across their garments and skin - spatter marks and small patches that suggest recent violence or perhaps tending to wounds. Though noticeable, the blood is minimal and has begun to dry in places.
+{% else if bDirty_Effect_Blood2 or bDirty_NPCEffect_Blood2 %}
+{{ decnpc(actorUUID).name }} is showing prominent large bloodstains spread across their clothing and armor. Dark crimson patches and streaks suggest they've been in a serious confrontation recently. The metallic scent of blood lingers around them.
+{% else if bDirty_Effect_Blood3 or bDirty_NPCEffect_Blood3 %}
+{{ decnpc(actorUUID).name }} is quite bloody, with gore liberally splashed across their person. Their hands and forearms are particularly stained with half-dried blood, and numerous spatters mark their face and clothing. They look as though they've just walked away from intense combat.
+{% else if bDirty_Effect_Blood4 or bDirty_NPCEffect_Blood4 or bDirty_NPCEffect_Blood5 %}
+{{ decnpc(actorUUID).name }} is covered in blood to a horrifying degree. They are drenched in crimson from head to toe, with blood soaking their clothing and armor, pooling in crevices, and still glistening wetly in places. Bloody footprints mark their path, and the overwhelming metallic smell of fresh gore surrounds them like an aura.
+{% endif %}
+
+{# Add additional descriptors #}
+{% if bDirty_NPCEffect_Dirt2_Professional or bDirty_NPCEffect_Dirt3_Professional %}
+ The dirt appears related to their profession - the specific pattern of staining and residue suggests the honorable grime of daily work rather than simple neglect.
+{% endif %}
+
+{% if bDirty_NPCEffect_Dirt2_Bandits_Fix or bDirty_NPCEffect_Dirt3_Bandits_Fix or bDirty_NPCEffect_Dirt4_Bandits_Fix %}
+ They show a distinctive pattern of grime that resembles that of wilderness travelers or those who've recently fought with bandits. There's a particular mixture of forest debris, campfire smoke residue, and weathered stains that could come from extended time in bandit territory or possibly rough living in the wilds.
+{% endif %}
+
+{% endif %} 
