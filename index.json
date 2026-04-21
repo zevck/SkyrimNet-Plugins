@@ -1,7 +1,56 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-21T07:56:19.178Z",
+  "generated_at": "2026-04-21T08:11:00.437Z",
   "plugins": [
+    {
+      "id": "plugins/rowan/healing-spell-commentary",
+      "type": "bundle",
+      "title": "Healing Spell Commentary",
+      "tagline": "Nearby NPCs react when the player casts healing magic.",
+      "author": "rowan",
+      "version": "1.0.0",
+      "skyrimnet_version": "0-19-0-0",
+      "tags": [
+        "magic",
+        "dialogue",
+        "restoration"
+      ],
+      "nsfw": false,
+      "mods": [],
+      "first_published": "2026-04-21T04:10:46-04:00",
+      "last_updated": "2026-04-21T04:10:46-04:00",
+      "contents": {
+        "triggers": 1,
+        "actions": 0,
+        "prompts": 1,
+        "knowledge": 0
+      }
+    },
+    {
+      "id": "plugins/thalia/companions-lore-pack",
+      "type": "bundle",
+      "title": "Companions Lore Pack",
+      "tagline": "Deep lore knowledge for all Companions members about lycanthropy and Ysgramor.",
+      "author": "thalia",
+      "version": "1.0.0",
+      "skyrimnet_version": "0-19-0-0",
+      "tags": [
+        "lore",
+        "companions",
+        "knowledge",
+        "werewolf"
+      ],
+      "nsfw": false,
+      "mods": [],
+      "first_published": "2026-04-21T04:10:46-04:00",
+      "last_updated": "2026-04-21T04:10:46-04:00",
+      "contents": {
+        "triggers": 0,
+        "actions": 0,
+        "prompts": 0,
+        "knowledge": 1
+      }
+    },
     {
       "id": "plugins/vex/dark-brotherhood-personalities",
       "type": "bundle",
@@ -24,62 +73,13 @@
           "required": true
         }
       ],
-      "first_published": "2026-04-21T07:56:19.170Z",
-      "last_updated": "2026-04-21T07:56:19.170Z",
+      "first_published": "2026-04-21T04:10:46-04:00",
+      "last_updated": "2026-04-21T04:10:46-04:00",
       "contents": {
         "triggers": 1,
         "actions": 0,
         "prompts": 3,
         "knowledge": 1
-      }
-    },
-    {
-      "id": "plugins/thalia/companions-lore-pack",
-      "type": "bundle",
-      "title": "Companions Lore Pack",
-      "tagline": "Deep lore knowledge for all Companions members about lycanthropy and Ysgramor.",
-      "author": "thalia",
-      "version": "1.0.0",
-      "skyrimnet_version": "0-19-0-0",
-      "tags": [
-        "lore",
-        "companions",
-        "knowledge",
-        "werewolf"
-      ],
-      "nsfw": false,
-      "mods": [],
-      "first_published": "2026-04-21T07:56:19.087Z",
-      "last_updated": "2026-04-21T07:56:19.087Z",
-      "contents": {
-        "triggers": 0,
-        "actions": 0,
-        "prompts": 0,
-        "knowledge": 1
-      }
-    },
-    {
-      "id": "plugins/rowan/healing-spell-commentary",
-      "type": "bundle",
-      "title": "Healing Spell Commentary",
-      "tagline": "Nearby NPCs react when the player casts healing magic.",
-      "author": "rowan",
-      "version": "1.0.0",
-      "skyrimnet_version": "0-19-0-0",
-      "tags": [
-        "magic",
-        "dialogue",
-        "restoration"
-      ],
-      "nsfw": false,
-      "mods": [],
-      "first_published": "2026-04-21T07:56:19.003Z",
-      "last_updated": "2026-04-21T07:56:19.003Z",
-      "contents": {
-        "triggers": 1,
-        "actions": 0,
-        "prompts": 1,
-        "knowledge": 0
       }
     }
   ]
