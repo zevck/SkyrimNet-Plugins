@@ -4,8 +4,7 @@
 // Runs inside .github/workflows/validate.yml on every pull request. Consumes:
 //   - BASE_DIR:     path to the base branch checkout (trusted — schemas, index.json, etc.)
 //   - PR_DIR:       path to the PR head checkout (untrusted — only plugins/ is sparse-checked-out)
-//   - PR_AUTHOR:    GitHub login of the PR author (informational, for human-readable error messages)
-//   - PR_AUTHOR_ID: GitHub numeric user ID of the PR author (THE integrity check — immutable, cannot be spoofed)
+//   - PR_AUTHOR:    GitHub login of the PR author (used to detect bot vs manual submissions)
 //   - PR_BODY:      PR description body (used to detect dashboard-submitted vs manual PRs)
 //   - PR_NUMBER:    PR number (informational, for log output)
 //   - RESULT_FILE:  absolute path to write the JSON result to (workflow reads this for labels/comments)
@@ -44,16 +43,10 @@ const env = {
   BASE_DIR: requireEnv("BASE_DIR"),
   PR_DIR: requireEnv("PR_DIR"),
   PR_AUTHOR: requireEnv("PR_AUTHOR"),
-  PR_AUTHOR_ID: Number(requireEnv("PR_AUTHOR_ID")),
   PR_BODY: process.env.PR_BODY ?? "",
   PR_NUMBER: process.env.PR_NUMBER ?? "unknown",
   RESULT_FILE: requireEnv("RESULT_FILE"),
 };
-
-if (!Number.isInteger(env.PR_AUTHOR_ID) || env.PR_AUTHOR_ID < 1) {
-  console.error(`PR_AUTHOR_ID must be a positive integer, got: ${process.env.PR_AUTHOR_ID}`);
-  process.exit(1);
-}
 
 function requireEnv(name) {
   const v = process.env[name];
@@ -155,45 +148,53 @@ schemas.manifest = {
 
 // ----- Author ban check ---------------------------------------------------
 //
-// Read bans.json from the upstream base directory and reject the PR
-// immediately if the PR author's GitHub user ID is in the active ban list.
-// Bans are a maintainer-only operation (file is editable only via direct push
-// to main), and they're stored as integer GitHub user IDs so renames don't
-// allow ban evasion. An entry's expires_at field can be null (permanent) or
-// an ISO 8601 timestamp; expired entries are ignored.
+// Read bans.json from the upstream base directory and reject the PR if the
+// author declared in the manifest is in the active ban list. Bans are keyed
+// on the username string (the SaaS-authoritative immutable identifier) and
+// checked AFTER the manifest is parsed below. The ban load happens here so
+// it's in one place, but the match happens after manifest load.
+let bans = [];
 const bansPath = path.join(env.BASE_DIR, "bans.json");
 if (fs.existsSync(bansPath)) {
   try {
     const bansRaw = JSON.parse(fs.readFileSync(bansPath, "utf8"));
-    const bans = Array.isArray(bansRaw?.bans) ? bansRaw.bans : [];
-    const now = Date.now();
-    const activeBan = bans.find((b) => {
-      if (b?.author_id !== env.PR_AUTHOR_ID) return false;
-      if (b.expires_at == null) return true;
-      const expiry = Date.parse(b.expires_at);
-      return Number.isFinite(expiry) ? expiry > now : true;
-    });
-    if (activeBan) {
-      const reason = activeBan.reason ?? "(no reason given)";
-      addError(
-        null,
-        `Author with GitHub user ID ${env.PR_AUTHOR_ID} is banned from publishing to this hub. Reason: ${reason}. If you believe this is in error, contact the moderators.`,
-      );
-      result.labels = ["validation-failed"];
-      finish();
-    }
+    bans = Array.isArray(bansRaw?.bans) ? bansRaw.bans : [];
   } catch (e) {
-    // bans.json is corrupted — log a warning but don't fail every PR
     addWarning(null, `Could not read bans.json: ${e.message}`);
   }
 }
 
-// ----- Detect manual vs dashboard PR --------------------------------------
+function activeBanFor(author) {
+  const now = Date.now();
+  return bans.find((b) => {
+    if (b?.author !== author) return false;
+    if (b.expires_at == null) return true;
+    const expiry = Date.parse(b.expires_at);
+    return Number.isFinite(expiry) ? expiry > now : true;
+  });
+}
 
-const isDashboardSubmitted = env.PR_BODY.includes(DASHBOARD_MARKER);
+// ----- Detect manual vs dashboard PR --------------------------------------
+//
+// Dashboard PRs are opened by the hub's GitHub App (a bot account). Contributors
+// don't have GitHub accounts tied to the hub — their identity is the SaaS
+// username carried in manifest.author. Integrity of that claim is enforced by
+// the SaaS at publish time (the dashboard can only write PRs on behalf of the
+// authenticated user), not by this validator.
+//
+// To treat a PR as dashboard-submitted we require BOTH:
+//   1. The PR opener is a bot account (login ends with '[bot]').
+//   2. The PR body contains the dashboard marker comment.
+//
+// The bot check is the gate — the marker is copy-pasteable alone provides no
+// integrity. A bot opener is controlled by whoever holds the app's installation
+// token, which lives in the backend that fronts the SaaS-authenticated user.
+
+const isBotAuthor = env.PR_AUTHOR.endsWith("[bot]");
+const isDashboardSubmitted = isBotAuthor && env.PR_BODY.includes(DASHBOARD_MARKER);
 if (!isDashboardSubmitted) {
   console.log(
-    "PR body does not contain the dashboard marker. Routing to manual review after structural checks.",
+    "PR is not dashboard-submitted (bot + marker). Routing to manual review after structural checks.",
   );
 }
 
@@ -234,8 +235,21 @@ function walkTree(root) {
 
 // ----- Path scope check ----------------------------------------------------
 //
-// Sparse checkout only pulls plugins/, so anything present in PR_DIR must
-// be under plugins/ — but we still enforce per-author scoping and single-plugin.
+// Sparse checkout only pulls plugins/, so anything present in PR_DIR must be
+// under plugins/. We enforce:
+//   - files are nested at plugins/{author}/{slug}/...
+//   - the author segment is a filesystem-safe, URL-safe string
+//   - the slug segment is the usual kebab-case plugin slug
+//   - every file in the PR belongs to exactly one plugin directory
+//
+// We do NOT enforce here that directory-author matches manifest-author — that
+// check happens after manifest parsing, where we have the manifest loaded.
+
+// Author segment pattern: SaaS-assigned usernames are treated as opaque but
+// must be safe for use as a path/URL segment. Whatever the SaaS emits flows
+// through here unchanged; this regex is a belt-and-suspenders filesystem
+// safety check, not a semantic validator.
+const AUTHOR_SEGMENT_RE = /^[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}$/;
 
 const pluginRoots = new Set();
 
@@ -246,30 +260,22 @@ for (const rel of changedFiles) {
     continue;
   }
 
-  // Must be under plugins/{author_id}/{slug}/
+  // Must be under plugins/{author}/{slug}/
   const parts = rel.split("/");
   if (parts.length < 4) {
-    addError(rel, `File is not deep enough to be inside a plugin directory. Expected plugins/${env.PR_AUTHOR_ID}/{slug}/...`);
+    addError(rel, `File is not deep enough to be inside a plugin directory. Expected plugins/{author}/{slug}/...`);
     continue;
   }
-  const [, idSegment, slug] = parts;
-  // The directory's first segment must be the PR author's numeric GitHub user ID.
-  // GitHub IDs are immutable across renames and unique forever, so this is the
-  // canonical ownership check — username takeover (someone re-registering a freed
-  // username) cannot fool this because their numeric ID is different.
-  if (!/^[1-9][0-9]*$/.test(idSegment)) {
-    addError(rel, `Plugin directory must be named with a numeric GitHub user ID, got 'plugins/${idSegment}/'. Plugin paths use the author's GitHub user ID (e.g. plugins/12345678/) so renames don't break ownership.`);
-    continue;
-  }
-  if (Number(idSegment) !== env.PR_AUTHOR_ID) {
-    addError(rel, `This file is under plugins/${idSegment}/ but the PR is opened by GitHub user ID ${env.PR_AUTHOR_ID} (login '${env.PR_AUTHOR}'). Contributors may only modify files in their own namespace.`);
+  const [, authorSegment, slug] = parts;
+  if (!AUTHOR_SEGMENT_RE.test(authorSegment)) {
+    addError(rel, `Plugin author directory '${authorSegment}' contains characters not allowed in a path segment (alphanumeric, '.', '_', '-' only, max 64 chars).`);
     continue;
   }
   if (!/^[a-z0-9][a-z0-9-]*[a-z0-9]$/.test(slug)) {
     addError(rel, `Plugin slug '${slug}' does not match the required format (lowercase alphanumeric + hyphens, 3-50 chars).`);
     continue;
   }
-  pluginRoots.add(`plugins/${idSegment}/${slug}`);
+  pluginRoots.add(`plugins/${authorSegment}/${slug}`);
 }
 
 if (result.errors.length > 0) {
@@ -321,14 +327,27 @@ if (!schemas.manifest.validate(manifest)) {
   }
 }
 
-// Cross-field checks. The integrity gate is manifest.author_id (immutable
-// numeric GitHub ID), not manifest.author (which is now a free-form display
-// name and has no integrity meaning).
-if (manifest.author_id !== env.PR_AUTHOR_ID) {
+// Directory author segment must match manifest.author — the only author
+// consistency check. The SaaS is the integrity root for the claim itself;
+// this validator only ensures the path and the manifest agree.
+const pathAuthor = pluginRoot.split("/")[1];
+if (typeof manifest.author === "string" && manifest.author !== pathAuthor) {
   addError(
     manifestPath,
-    `manifest.author_id is ${manifest.author_id} but the PR is opened by GitHub user ID ${env.PR_AUTHOR_ID}. These must match. The dashboard should populate this automatically — if you are seeing this error after a manual edit, restore the original author_id.`,
+    `manifest.author is '${manifest.author}' but the plugin directory is 'plugins/${pathAuthor}/'. These must match. The dashboard populates this automatically — if you are seeing this error after a manual edit, restore the original author.`,
   );
+}
+
+// Ban check (keyed on the author string in the manifest).
+if (typeof manifest.author === "string") {
+  const hit = activeBanFor(manifest.author);
+  if (hit) {
+    const reason = hit.reason ?? "(no reason given)";
+    addError(
+      manifestPath,
+      `Author '${manifest.author}' is banned from publishing to this hub. Reason: ${reason}. If you believe this is in error, contact the moderators.`,
+    );
+  }
 }
 
 // Type gate: listing is not yet supported

@@ -4,7 +4,7 @@
   "title": "SkyrimNet Plugin Manifest",
   "description": "Metadata for a plugin submission. One manifest.json per plugin directory.\n\nThis schema is deliberately permissive on per-field formatting because the SkyrimNet dashboard is the only supported submission path and is the authoritative source of truth for how fields are shaped. The dashboard generates titles, taglines, descriptions, versions, tags, mod lists, and every other author-facing field, so revalidating their exact character patterns here would only produce false positives when the dashboard evolves.\n\nWhat this schema still enforces is structural: which fields are required, their fundamental types, the bundle-vs-listing discriminator, conditional requirements (listings need external_url, action plugins need an invocation block with source_mods), and basic safety rules (external URLs must be http(s), strings must be non-empty, sanity size ceilings). Cross-file rules (title uniqueness, author matching, invocation-required-if-actions, listing-has-no-content-files) live in validate.yml, not here.\n\nIf you are reading this because the dashboard changed and manifests no longer validate, the fix is usually to relax the schema further — not tighten it.",
   "type": "object",
-  "required": ["type", "title", "tagline", "description", "author_id", "author", "version", "skyrimnet_version", "nsfw"],
+  "required": ["type", "title", "tagline", "description", "author", "version", "skyrimnet_version", "nsfw"],
   "additionalProperties": false,
   "properties": {
     "type": {
@@ -36,16 +36,11 @@
       "maxLength": 5000,
       "description": "Full description shown on the plugin detail page. Not included in index.json — fetched on-demand from manifest.json. Rendered as restricted markdown by the dashboard."
     },
-    "author_id": {
-      "type": "integer",
-      "minimum": 1,
-      "description": "GitHub user's immutable numeric ID (NOT the username). Auto-populated by the dashboard from /user API at publish time. This is the canonical ownership identifier — it never changes when a user renames their account, and it is the basis of the directory path (plugins/{author_id}/{slug}/). validate.yml cross-checks this against github.event.pull_request.user.id, which cannot be spoofed."
-    },
     "author": {
       "type": "string",
       "minLength": 1,
       "maxLength": 50,
-      "description": "Free-form display name shown on the dashboard. NOT the GitHub username (that's just one possible value). Users in the SkyrimNet community are often known by handles different from their GitHub login. The display name has no uniqueness requirement; the dashboard disambiguates same-named users by appending a discriminator derived from author_id (Discord-style: 'Bob#5678'). Per-plugin in the manifest — users with multiple plugins update each individually if they want consistent rebranding."
+      "description": "The author's username. Auto-populated by the dashboard from the authenticated SaaS user and treated as the canonical identifier: the directory name (plugins/{author}/{slug}/) uses this string, PR branches embed it, and bans are keyed on it. Uniqueness and immutability are enforced upstream by the SaaS at account creation — once taken, a username is not reassignable, so plugin paths survive forever even if a user disappears. Character formatting is trusted because users cannot type it; the dashboard only ever writes back the string the SaaS already accepted."
     },
     "version": {
       "type": "string",

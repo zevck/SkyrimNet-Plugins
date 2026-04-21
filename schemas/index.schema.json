@@ -30,7 +30,6 @@
         "type",
         "title",
         "tagline",
-        "author_id",
         "author",
         "version",
         "skyrimnet_version",
@@ -44,9 +43,9 @@
       "properties": {
         "id": {
           "type": "string",
-          "pattern": "^plugins/[1-9][0-9]*/[a-z0-9][a-z0-9-]*[a-z0-9]$",
+          "pattern": "^plugins/[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}/[a-z0-9][a-z0-9-]*[a-z0-9]$",
           "maxLength": 200,
-          "description": "Canonical plugin ID derived from the directory path: 'plugins/{author_id}/{slug}'. The first segment after 'plugins/' is the author's numeric GitHub user ID (immutable), and the second segment is the URL-safe slug. Refactored from username-based paths in 2026-04-15 to immune the system to GitHub username changes and username takeover."
+          "description": "Canonical plugin ID derived from the directory path: 'plugins/{author}/{slug}'. The author segment is the SaaS-assigned immutable username (uniqueness + immutability enforced at signup, so paths never collide and never break). The slug is the URL-safe plugin slug."
         },
         "type": {
           "enum": ["bundle", "listing"],
@@ -64,16 +63,11 @@
           "maxLength": 200,
           "description": "Short one-liner shown on browse cards. Copied from manifest.json."
         },
-        "author_id": {
-          "type": "integer",
-          "minimum": 1,
-          "description": "GitHub user's immutable numeric ID. Copied from manifest.json. The dashboard uses this together with the display name to render Discord-style discriminators (e.g. 'Bob#5678' using last 4 digits) when multiple authors share a display name."
-        },
         "author": {
           "type": "string",
           "minLength": 1,
           "maxLength": 50,
-          "description": "Free-form display name shown on the dashboard. Copied from manifest.json. NOT the GitHub username. No uniqueness enforced — disambiguation handled by the dashboard via author_id discriminator."
+          "description": "The author's SaaS-assigned immutable username. Copied from manifest.json. Also forms the author segment of the plugin path."
         },
         "version": {
           "type": "string",
@@ -141,12 +135,12 @@
         "first_published": {
           "type": "string",
           "format": "date-time",
-          "description": "Derived from: git log --reverse --format=%aI -- plugins/{author_id}/{slug}/ | head -1"
+          "description": "Derived from: git log --reverse --format=%aI -- plugins/{author}/{slug}/ | head -1"
         },
         "last_updated": {
           "type": "string",
           "format": "date-time",
-          "description": "Derived from: git log -1 --format=%aI -- plugins/{author_id}/{slug}/"
+          "description": "Derived from: git log -1 --format=%aI -- plugins/{author}/{slug}/"
         }
       },
       "allOf": [

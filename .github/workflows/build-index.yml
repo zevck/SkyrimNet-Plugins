@@ -1,7 +1,7 @@
 name: Build plugin index
 
 # Regenerates index.json whenever a plugin is merged to main. Walks every
-# plugins/{author_id}/{slug}/manifest.json, extracts browse-page fields,
+# plugins/{author}/{slug}/manifest.json, extracts browse-page fields,
 # counts content files, derives dates from git history, and writes the
 # aggregate index.json. Commits the result back to main via the built-in
 # GITHUB_TOKEN.

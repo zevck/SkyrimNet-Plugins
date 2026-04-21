@@ -1,14 +1,13 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-17T23:18:47.899Z",
+  "generated_at": "2026-04-21T07:56:19.178Z",
   "plugins": [
     {
-      "id": "plugins/99887766/dark-brotherhood-personalities",
+      "id": "plugins/vex/dark-brotherhood-personalities",
       "type": "bundle",
       "title": "Dark Brotherhood Personalities",
       "tagline": "Distinct personalities and deep lore for every Dark Brotherhood member.",
-      "author_id": 99887766,
-      "author": "NightMother",
+      "author": "vex",
       "version": "2.1.0",
       "skyrimnet_version": "0-19-0-0",
       "tags": [
@@ -25,8 +24,8 @@
           "required": true
         }
       ],
-      "first_published": "2026-04-16T18:25:17-04:00",
-      "last_updated": "2026-04-17T19:18:36-04:00",
+      "first_published": "2026-04-21T07:56:19.170Z",
+      "last_updated": "2026-04-21T07:56:19.170Z",
       "contents": {
         "triggers": 1,
         "actions": 0,
@@ -35,37 +34,11 @@
       }
     },
     {
-      "id": "plugins/12345678/healing-spell-commentary",
-      "type": "bundle",
-      "title": "Healing Spell Commentary",
-      "tagline": "Nearby NPCs react when the player casts healing magic.",
-      "author_id": 12345678,
-      "author": "ExampleUser",
-      "version": "1.0.0",
-      "skyrimnet_version": "0-19-0-0",
-      "tags": [
-        "magic",
-        "dialogue",
-        "restoration"
-      ],
-      "nsfw": false,
-      "mods": [],
-      "first_published": "2026-04-16T18:25:17-04:00",
-      "last_updated": "2026-04-16T21:49:51-04:00",
-      "contents": {
-        "triggers": 1,
-        "actions": 0,
-        "prompts": 1,
-        "knowledge": 0
-      }
-    },
-    {
-      "id": "plugins/55443322/companions-lore-pack",
+      "id": "plugins/thalia/companions-lore-pack",
       "type": "bundle",
       "title": "Companions Lore Pack",
       "tagline": "Deep lore knowledge for all Companions members about lycanthropy and Ysgramor.",
-      "author_id": 55443322,
-      "author": "LoreHound",
+      "author": "thalia",
       "version": "1.0.0",
       "skyrimnet_version": "0-19-0-0",
       "tags": [
@@ -76,13 +49,37 @@
       ],
       "nsfw": false,
       "mods": [],
-      "first_published": "2026-04-16T18:25:17-04:00",
-      "last_updated": "2026-04-16T21:49:51-04:00",
+      "first_published": "2026-04-21T07:56:19.087Z",
+      "last_updated": "2026-04-21T07:56:19.087Z",
       "contents": {
         "triggers": 0,
         "actions": 0,
         "prompts": 0,
         "knowledge": 1
+      }
+    },
+    {
+      "id": "plugins/rowan/healing-spell-commentary",
+      "type": "bundle",
+      "title": "Healing Spell Commentary",
+      "tagline": "Nearby NPCs react when the player casts healing magic.",
+      "author": "rowan",
+      "version": "1.0.0",
+      "skyrimnet_version": "0-19-0-0",
+      "tags": [
+        "magic",
+        "dialogue",
+        "restoration"
+      ],
+      "nsfw": false,
+      "mods": [],
+      "first_published": "2026-04-21T07:56:19.003Z",
+      "last_updated": "2026-04-21T07:56:19.003Z",
+      "contents": {
+        "triggers": 1,
+        "actions": 0,
+        "prompts": 1,
+        "knowledge": 0
       }
     }
   ]

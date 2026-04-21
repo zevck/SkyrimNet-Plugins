@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // SkyrimNet Plugins — index builder
 //
-// Walks every plugins/{author_id}/{slug}/manifest.json, extracts the fields
+// Walks every plugins/{author}/{slug}/manifest.json, extracts the fields
 // the dashboard needs for the browse page, counts content files, derives
 // first_published and last_updated from git history, filters out hidden
 // plugins, and writes index.json.
@@ -124,7 +124,6 @@ if (!fs.existsSync(PLUGINS_DIR)) {
         type: manifest.type,
         title: manifest.title,
         tagline: manifest.tagline,
-        author_id: manifest.author_id,
         author: manifest.author,
         version: manifest.version,
         skyrimnet_version: manifest.skyrimnet_version,
