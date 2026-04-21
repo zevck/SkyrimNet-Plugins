@@ -1,7 +1,29 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-21T11:38:18.494Z",
+  "generated_at": "2026-04-21T11:53:54.784Z",
   "plugins": [
+    {
+      "id": "plugins/Zevick/test-2",
+      "type": "bundle",
+      "title": "Test 2",
+      "tagline": "dadasdasdasd ada",
+      "author": "Zevick",
+      "version": "1.0.0",
+      "skyrimnet_version": "0.19.0",
+      "tags": [
+        "test"
+      ],
+      "nsfw": false,
+      "mods": [],
+      "first_published": "2026-04-21T11:53:41Z",
+      "last_updated": "2026-04-21T11:53:41Z",
+      "contents": {
+        "triggers": 1,
+        "actions": 0,
+        "prompts": 0,
+        "knowledge": 0
+      }
+    },
     {
       "id": "plugins/Zevick/test",
       "type": "bundle",
