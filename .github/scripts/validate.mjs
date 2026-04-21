@@ -2,12 +2,15 @@
 // SkyrimNet Plugins — structural validator
 //
 // Runs inside .github/workflows/validate.yml on every pull request. Consumes:
-//   - BASE_DIR:     path to the base branch checkout (trusted — schemas, index.json, etc.)
-//   - PR_DIR:       path to the PR head checkout (untrusted — only plugins/ is sparse-checked-out)
-//   - PR_AUTHOR:    GitHub login of the PR author (used to detect bot vs manual submissions)
-//   - PR_BODY:      PR description body (used to detect dashboard-submitted vs manual PRs)
-//   - PR_NUMBER:    PR number (informational, for log output)
-//   - RESULT_FILE:  absolute path to write the JSON result to (workflow reads this for labels/comments)
+//   - BASE_DIR:      path to the base branch checkout (trusted — schemas, index.json, etc.)
+//   - PR_DIR:        path to the PR head checkout (untrusted — only plugins/ is sparse-checked-out)
+//   - PR_FILES_FILE: path to a newline-separated list of files this PR changes (written by
+//                    the workflow from the GitHub API). The validator uses this instead of
+//                    walking PR_DIR so unchanged plugins aren't flagged as part of the submission.
+//   - PR_AUTHOR:     GitHub login of the PR author (used to detect bot vs manual submissions)
+//   - PR_BODY:       PR description body (used to detect dashboard-submitted vs manual PRs)
+//   - PR_NUMBER:     PR number (informational, for log output)
+//   - RESULT_FILE:   absolute path to write the JSON result to (workflow reads this for labels/comments)
 //
 // Never consumes anything from the PR side that could influence execution:
 // no require(), no eval(), no dynamic imports of PR files. The PR is treated
@@ -42,6 +45,7 @@ const CONTENT_DIRS = ["triggers", "actions", "prompts", "knowledge"];
 const env = {
   BASE_DIR: requireEnv("BASE_DIR"),
   PR_DIR: requireEnv("PR_DIR"),
+  PR_FILES_FILE: requireEnv("PR_FILES_FILE"),
   PR_AUTHOR: requireEnv("PR_AUTHOR"),
   PR_BODY: process.env.PR_BODY ?? "",
   PR_NUMBER: process.env.PR_NUMBER ?? "unknown",
@@ -199,17 +203,23 @@ if (!isDashboardSubmitted) {
 }
 
 // ----- Changed files -------------------------------------------------------
+//
+// The list of files this PR actually changes comes from the GitHub Pulls API
+// (written to PR_FILES_FILE by the workflow). We intentionally do NOT walk
+// PR_DIR for this — sparse-checkout pulls the full plugins/ tree from the PR
+// head, which includes every existing plugin on main. Walking it would cause
+// the validator to flag unchanged pre-existing plugins as part of the
+// submission.
 
-// List every file under PR_DIR. We don't use `git diff` here because the CI
-// workflow already sparse-checks-out only `plugins/` — anything visible in
-// PR_DIR is by construction part of the PR, and the authoritative "does the
-// PR touch infra files?" check is enforced structurally by sparse-checkout
-// plus the path-scope verification below.
 let changedFiles = [];
 try {
-  changedFiles = walkTree(env.PR_DIR).map((abs) => path.relative(env.PR_DIR, abs).replace(/\\/g, "/"));
+  const raw = fs.readFileSync(env.PR_FILES_FILE, "utf8");
+  changedFiles = raw
+    .split("\n")
+    .map((s) => s.trim())
+    .filter(Boolean);
 } catch (e) {
-  addError(null, `Could not enumerate PR files: ${e.message}`);
+  addError(null, `Could not read PR file list (${env.PR_FILES_FILE}): ${e.message}`);
   finish();
 }
 
