@@ -106,6 +106,16 @@
         "description": "Display name of the requirement. May include version notes like 'Apocalypse - Magic of Skyrim >= 9.45'."
       }
     },
+    "files": {
+      "type": "array",
+      "maxItems": 1500,
+      "description": "List of content file paths (relative to the plugin directory) that the dashboard bundled with this submission. Populated automatically at publish time. Used by the dashboard detail view to fetch and preview content without hitting the GitHub Contents API for a directory listing. Cross-file consistency (paths actually exist, no orphans) is enforced in validate.yml, not in the schema.",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 500
+      }
+    },
     "invocation": {
       "type": "object",
       "description": "REQUIRED by validate.yml if the plugin contains any actions/*.yaml files. Provides reviewer context for manual action review. Never present for listing plugins or for bundles with no actions.",
