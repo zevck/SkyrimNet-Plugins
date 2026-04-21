@@ -1,7 +1,29 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-21T09:14:38.588Z",
+  "generated_at": "2026-04-21T11:38:18.494Z",
   "plugins": [
+    {
+      "id": "plugins/Zevick/test",
+      "type": "bundle",
+      "title": "Test",
+      "tagline": "dasdasdasd",
+      "author": "Zevick",
+      "version": "1.0.0",
+      "skyrimnet_version": "0.19.0",
+      "tags": [
+        "test"
+      ],
+      "nsfw": true,
+      "mods": [],
+      "first_published": "2026-04-21T11:38:11Z",
+      "last_updated": "2026-04-21T11:38:11Z",
+      "contents": {
+        "triggers": 1,
+        "actions": 0,
+        "prompts": 0,
+        "knowledge": 0
+      }
+    },
     {
       "id": "plugins/Zevick/simple-hunting-overhaul-integration",
       "type": "bundle",
