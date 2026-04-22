@@ -1,7 +1,32 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-22T21:58:34.288Z",
+  "generated_at": "2026-04-22T23:54:34.873Z",
   "plugins": [
+    {
+      "id": "plugins/Zevick/stress-fear-integration",
+      "type": "bundle",
+      "title": "Stress & Fear Integration",
+      "tagline": "Prompt that adds Stress & Fear integration",
+      "author": "Zevick",
+      "tags": [
+        "stress",
+        "fear",
+        "mod integration"
+      ],
+      "nsfw": false,
+      "icon": "package",
+      "mods": [],
+      "first_published": "2026-04-22T19:55:56Z\n2026-04-22T23:54:26Z",
+      "last_updated": "2026-04-22T23:54:26Z",
+      "version": "1.0.0",
+      "skyrimnet_version": "0.19.0",
+      "contents": {
+        "triggers": 0,
+        "actions": 0,
+        "prompts": 1,
+        "knowledge": 0
+      }
+    },
     {
       "id": "plugins/Zevick/s-t-f-u-skyrim-talk-filter-utility",
       "type": "listing",
