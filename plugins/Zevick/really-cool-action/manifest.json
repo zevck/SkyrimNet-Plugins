@@ -1,0 +1,22 @@
+{
+  "type": "bundle",
+  "title": "Really Cool Action",
+  "tagline": "Wow this action is really cool",
+  "description": "Words cannot describe how cool this action is",
+  "author": "Zevick",
+  "tags": [
+    "really",
+    "cool",
+    "action",
+    "wow"
+  ],
+  "nsfw": false,
+  "icon": "wrench",
+  "mods": [],
+  "requirements": [],
+  "version": "1.0.0",
+  "skyrimnet_version": "0.19.0",
+  "files": [
+    "actions/rse_invite.yaml"
+  ]
+}
