@@ -1,0 +1,19 @@
+{
+  "type": "bundle",
+  "title": "dasdasdasdas ",
+  "tagline": "ada asd adasd",
+  "description": "duoashdashlj adjlasdas kn",
+  "author": "Zevick",
+  "tags": [
+    "dasdasd"
+  ],
+  "nsfw": false,
+  "icon": "zap",
+  "mods": [],
+  "requirements": [],
+  "version": "1.0.0",
+  "skyrimnet_version": "0.19.0",
+  "files": [
+    "prompts/submodules/character_bio/test.prompt"
+  ]
+}
