@@ -1,31 +1,25 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-22T08:56:19.766Z",
+  "generated_at": "2026-04-22T09:19:09.088Z",
   "plugins": [
     {
       "id": "plugins/Zevick/test-3",
       "type": "bundle",
       "title": "Test 3",
-      "tagline": "dasdasdas das",
+      "tagline": "ad asdasdad",
       "author": "Zevick",
       "tags": [
-        "test"
+        "asd asdas"
       ],
       "nsfw": false,
       "icon": "package",
-      "mods": [
-        {
-          "name": "Dawnguard.esm",
-          "file": "dawnguard.esm",
-          "required": true
-        }
-      ],
-      "first_published": "2026-04-22T08:56:04Z",
-      "last_updated": "2026-04-22T08:56:04Z",
+      "mods": [],
+      "first_published": "2026-04-22T08:56:04Z\n2026-04-22T09:18:58Z",
+      "last_updated": "2026-04-22T09:18:58Z",
       "version": "1.0.0",
       "skyrimnet_version": "0.19.0",
       "contents": {
-        "triggers": 0,
+        "triggers": 1,
         "actions": 0,
         "prompts": 1,
         "knowledge": 0
