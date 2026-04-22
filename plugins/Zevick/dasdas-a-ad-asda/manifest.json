@@ -1,0 +1,25 @@
+{
+  "type": "bundle",
+  "title": "dasdas a ad asda",
+  "tagline": "asd asd asda",
+  "description": "asd asd asdas da",
+  "author": "Zevick",
+  "tags": [
+    "adasd"
+  ],
+  "nsfw": false,
+  "icon": "zap",
+  "mods": [
+    {
+      "name": "Wounds.esp",
+      "file": "wounds.esp",
+      "required": true
+    }
+  ],
+  "requirements": [],
+  "version": "1.0.0",
+  "skyrimnet_version": "0.19.0",
+  "files": [
+    "triggers/W_BracedPain.yaml"
+  ]
+}
