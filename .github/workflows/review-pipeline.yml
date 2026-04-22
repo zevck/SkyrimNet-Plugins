@@ -73,12 +73,13 @@ jobs:
               pull_number: context.payload.pull_request.number,
               per_page: 100,
             });
-            const paths = files
-              .filter(f => f.status !== 'removed')
-              .map(f => f.filename);
+            // Emit "status\tfilename" per line so the validator can tell
+            // deletions from additions/modifications. Deletion PRs (hub takedown)
+            // show up as all-removed rows and validate.mjs special-cases them.
+            const lines = files.map(f => `${f.status}\t${f.filename}`);
             require('fs').writeFileSync(
               `${process.env.GITHUB_WORKSPACE}/pr-files.txt`,
-              paths.join('\n'),
+              lines.join('\n'),
             );
 
       - name: Run validation
@@ -251,6 +252,7 @@ jobs:
           route="validation-failed"
           if [ "$success" = "true" ]; then
             case ",$labels," in
+              *,deletion,*)               route="deletion" ;;
               *,ready-for-agent-review,*) route="ready-for-agent-review" ;;
               *,manual-review,*)          route="manual-review" ;;
               *)                          route="manual-review" ;;
@@ -396,7 +398,15 @@ jobs:
   # ---------------------------------------------------------------------------
   auto-merge:
     needs: [validate, agent-review]
-    if: needs.agent-review.outputs.decision == 'agent-approved'
+    # Deletion PRs skip the agent (no content to scan) and come straight from
+    # validate with route='deletion'. The `always()` wrapper is required so
+    # this job still runs when agent-review was skipped rather than failed.
+    if: |
+      always() && !cancelled()
+      && (
+        needs.agent-review.result == 'success' && needs.agent-review.outputs.decision == 'agent-approved'
+        || needs.agent-review.result == 'skipped' && needs.validate.outputs.route == 'deletion'
+      )
     runs-on: ubuntu-latest
     timeout-minutes: 5
 

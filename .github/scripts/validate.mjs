@@ -211,15 +211,134 @@ if (!isDashboardSubmitted) {
 // the validator to flag unchanged pre-existing plugins as part of the
 // submission.
 
+// Each line is "status\tfilename" emitted by the workflow. Deletions are
+// included so we can recognise takedown PRs. Lines that predate the tab
+// format are treated as status "changed" for backward compatibility.
 let changedFiles = [];
+let deletedFiles = [];
 try {
   const raw = fs.readFileSync(env.PR_FILES_FILE, "utf8");
-  changedFiles = raw
-    .split("\n")
-    .map((s) => s.trim())
-    .filter(Boolean);
+  for (const line of raw.split("\n").map((s) => s.trim()).filter(Boolean)) {
+    const tab = line.indexOf("\t");
+    const status = tab >= 0 ? line.slice(0, tab) : "changed";
+    const file = tab >= 0 ? line.slice(tab + 1) : line;
+    if (status === "removed") {
+      deletedFiles.push(file);
+    } else {
+      changedFiles.push(file);
+    }
+  }
 } catch (e) {
   addError(null, `Could not read PR file list (${env.PR_FILES_FILE}): ${e.message}`);
+  finish();
+}
+
+// Deletion PR: every file in the PR is a removal, and they all live under a
+// single plugins/{author}/{slug}/ directory. We route these straight through
+// with a `ready-for-agent-review` label so agent-review → auto-merge still
+// runs; agent-review sees zero content files and auto-approves ("No content
+// files to review.").
+const isDeletionPR = changedFiles.length === 0 && deletedFiles.length > 0;
+if (isDeletionPR) {
+  const deletionRoots = new Set();
+  for (const rel of deletedFiles) {
+    if (!rel.startsWith("plugins/")) {
+      addError(rel, `Deletion PR touches a file outside plugins/. Takedown PRs must only remove files inside a single plugin directory.`);
+      continue;
+    }
+    const parts = rel.split("/");
+    if (parts.length < 4) continue;
+    deletionRoots.add(`plugins/${parts[1]}/${parts[2]}`);
+  }
+  if (result.errors.length > 0) { routeOrFail(); finish(); }
+  if (deletionRoots.size !== 1) {
+    addError(
+      null,
+      `Deletion PR must remove files from exactly one plugin directory; found ${deletionRoots.size}.`,
+    );
+    routeOrFail();
+    finish();
+  }
+  const pluginRoot = [...deletionRoots][0];
+  const pathAuthor = pluginRoot.split("/")[1];
+
+  // Safety: the plugin must actually exist on the base branch. An "empty
+  // deletion" PR that adds no files and removes nothing real would otherwise
+  // slide through as a no-op auto-merge.
+  const basePluginDir = path.join(env.BASE_DIR, pluginRoot);
+  if (!fs.existsSync(basePluginDir)) {
+    addError(
+      null,
+      `Deletion PR targets \`${pluginRoot}\` but that directory does not exist on the base branch.`,
+    );
+    routeOrFail();
+    finish();
+  }
+
+  // Safety: every file under the plugin directory on the base branch must
+  // appear in deletedFiles — partial deletions aren't allowed. Forces authors
+  // through the edit flow instead of sneaking content changes as deletions.
+  const baseFiles = walkTree(basePluginDir)
+    .map((abs) => path.relative(env.BASE_DIR, abs).replace(/\\/g, "/"));
+  const deletedSet = new Set(deletedFiles);
+  const missing = baseFiles.filter((f) => !deletedSet.has(f));
+  if (missing.length > 0) {
+    addError(
+      null,
+      `Deletion PR must remove every file in the plugin directory, but these were not removed:\n${missing.map((m) => `  - ${m}`).join("\n")}`,
+    );
+    routeOrFail();
+    finish();
+  }
+
+  // Safety: extra paranoia — reject any "deleted" row that isn't actually
+  // under the target plugin directory. The deletionRoots.size === 1 check
+  // above already enforces this for well-formed paths, but this catches any
+  // oddly shaped rel paths (symlinks, paths with `..`, etc.) that might slip
+  // through the split/filter earlier.
+  const prefix = `${pluginRoot}/`;
+  const stray = deletedFiles.filter((f) => !f.startsWith(prefix));
+  if (stray.length > 0) {
+    addError(
+      null,
+      `Deletion PR must only remove files inside \`${pluginRoot}/\`, but these are outside it:\n${stray.map((m) => `  - ${m}`).join("\n")}`,
+    );
+    routeOrFail();
+    finish();
+  }
+
+  // Safety: deletions must come through the dashboard. A forked-PR that
+  // happens to match the deletion shape must not auto-merge — the bot +
+  // marker gate is the same trust anchor used for additions. Non-dashboard
+  // deletions route to manual review so a maintainer can decide.
+  if (!isDashboardSubmitted) {
+    result.labels.push("manual-review");
+    result.manualReason =
+      `Deletion PR for \`${pluginRoot}\` was not submitted through the dashboard ` +
+      `(bot + marker check failed). Routing to manual review; a maintainer must ` +
+      `confirm this takedown before merging.`;
+    console.log(
+      `Deletion PR (${pluginRoot}) is not dashboard-submitted. Routing to manual review.`,
+    );
+    finish();
+  }
+
+  // Log for audit. Every auto-merged deletion writes this line with the path
+  // author so retrospective review can catch patterns (e.g. one dashboard
+  // account deleting many authors' plugins).
+  console.log(
+    `[takedown] author=${pathAuthor} plugin=${pluginRoot} files=${deletedFiles.length} pr_author=${env.PR_AUTHOR} pr=#${env.PR_NUMBER}`,
+  );
+
+  // Deletion route is its own animal — there's no content for the agent to
+  // scan and findPluginDir() would return the wrong plugin dir (the deleted
+  // one isn't present in the PR head). Workflow routes this straight to
+  // auto-merge.
+  result.labels.push("deletion");
+  result.comment =
+    `### Takedown detected\n\n` +
+    `This PR removes \`${pluginRoot}\` in its entirety. Agent review is ` +
+    `skipped (no content to scan) and the PR will auto-merge.`;
   finish();
 }
 
