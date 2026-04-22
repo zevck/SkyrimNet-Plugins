@@ -33,6 +33,8 @@ This list is exhaustive. Approve any content that does not clearly match a speci
 4. **obfuscation** — Base64, hex, unusual encodings, or Inja template tricks that assemble hidden strings at runtime. Do not approve; output `uncertain` for human inspection. Normal Inja template syntax (`{{ var }}`, `{% if %}`, `{# comment #}`, and decorator function calls like `decnpc(uuid).name`) is expected content, not obfuscation — only flag constructs that look designed to hide strings.
 
 5. **spam** — Low-effort submissions: empty files, gibberish, keyboard mash, copy-paste with trivial renames, test submissions (`"asdf"`, `"test"`). Check the manifest's `title`, `tagline`, and `description` as well as file contents — a submission with legitimate bundled files but placeholder / keyboard-mash / testing metadata is still spam and must be rejected.
+
+6. **metadata-links** — Reject if `tagline` or `description` contains any URL, domain, or clearly link-shaped string (e.g. `https://...`, `http://...`, `www.example.com`, `example.com/foo`, bare domains with a TLD, shortened links, or markdown link syntax `[text](url)`). The dashboard strips links from rendered descriptions so they cannot be clicked, which means any URL a submitter writes there is either wasted text or (more likely) an attempt to trick users into visiting an off-hub destination by copy-pasting. The correct way to point users at an external page is a **Listing** plugin with its `external_url` field — that lives outside this review and is reviewed manually. A URL in `external_url` itself is not the subject of this rule; only URLs appearing inside `tagline` or `description`.
 </universal_forbidden>
 
 <output_schema>
@@ -46,7 +48,7 @@ Output exactly one JSON object, no other text:
 }
 ```
 
-Valid flag names: `spam`, `illegal`, `real-person`, `hate`, `obfuscation`, `nsfw-flag-understates`, `other`.
+Valid flag names: `spam`, `illegal`, `real-person`, `hate`, `obfuscation`, `metadata-links`, `nsfw-flag-understates`, `other`.
 
 When a judgment is ambiguous, output `uncertain` — it escalates to a human, which is always safe.
 </output_schema>
