@@ -125,50 +125,72 @@
     "invocation": {
       "type": "object",
       "description": "REQUIRED by validate.yml if the plugin contains any actions/*.yaml files. Provides reviewer context for manual action review. Never present for listing plugins or for bundles with no actions.",
-      "required": ["purpose", "source_mods", "side_effects", "attestation"],
+      "required": ["purpose", "actions", "attestation"],
       "additionalProperties": false,
       "properties": {
         "purpose": {
           "type": "string",
           "minLength": 1,
           "maxLength": 2000,
-          "description": "What the action(s) do, in plain English."
+          "description": "Plugin-level summary of what the action(s) collectively do, in plain English."
         },
-        "source_mods": {
+        "actions": {
           "type": "array",
           "minItems": 1,
           "maxItems": 20,
-          "description": "Skyrim mods whose Papyrus functions the actions call. Required because community-submitted actions are always mod integrations by nature.",
+          "description": "Per-action entries. Each bundled actions/*.yaml file gets its own source_mods list because one submission can combine actions that target different Skyrim mods. Actions that only call vanilla Skyrim Papyrus functions set `vanilla: true` instead of supplying source_mods.",
           "items": {
             "type": "object",
-            "required": ["name", "url"],
+            "required": ["file"],
             "additionalProperties": false,
             "properties": {
-              "name": {
+              "file": {
                 "type": "string",
-                "minLength": 1,
-                "maxLength": 200
-              },
-              "url": {
-                "type": "string",
-                "pattern": "^https?://",
                 "minLength": 10,
-                "maxLength": 2000
+                "maxLength": 500,
+                "pattern": "^actions/.+\\.ya?ml$",
+                "description": "Path of the action file this entry describes, relative to the plugin root. Must match an entry in the plugin's files[] list."
+              },
+              "vanilla": {
+                "type": "boolean",
+                "description": "True when the action calls only vanilla Skyrim / Creation Kit Papyrus functions (no community mod APIs). When true, source_mods is omitted."
+              },
+              "source_mods": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 20,
+                "description": "Skyrim mods whose Papyrus functions this specific action calls. Required unless `vanilla: true`.",
+                "items": {
+                  "type": "object",
+                  "required": ["name", "url"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200
+                    },
+                    "url": {
+                      "type": "string",
+                      "pattern": "^https?://",
+                      "minLength": 10,
+                      "maxLength": 2000
+                    }
+                  }
+                }
               }
-            }
+            },
+            "oneOf": [
+              { "required": ["vanilla"], "properties": { "vanilla": { "const": true } }, "not": { "required": ["source_mods"] } },
+              { "required": ["source_mods"], "not": { "required": ["vanilla"] } }
+            ]
           }
-        },
-        "side_effects": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 2000,
-          "description": "Reviewer-facing explanation of what game state the action modifies and why it's safe."
         },
         "attestation": {
           "type": "string",
           "minLength": 1,
           "maxLength": 2000,
-          "description": "Author's signed statement that they tested the action without save corruption or quest breakage."
+          "description": "Author's signed statement that they tested the actions without save corruption or quest breakage."
         }
       }
     }

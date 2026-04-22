@@ -143,6 +143,18 @@ jobs:
               });
             }
 
+            // Hard validation failure: structural rejection that no reviewer
+            // should look at — close the PR so the dashboard's "Pending" list
+            // doesn't leave the author's submission dangling. Pushing new
+            // commits to the branch auto-reopens the PR and restarts the
+            // pipeline, so the author can still iterate.
+            if (result.labels.includes('validation-failed')) {
+              await github.rest.pulls.update({
+                owner: pr.owner, repo: pr.repo, pull_number: pr.number,
+                state: 'closed',
+              });
+            }
+
       - name: Determine route for next stage
         id: route
         if: always()
@@ -259,6 +271,17 @@ jobs:
               await github.rest.issues.createComment({
                 owner: pr.owner, repo: pr.repo, issue_number: pr.number,
                 body: result.comment,
+              });
+            }
+
+            // Agent hard-rejection: content violates the forbidden list, not
+            // a marginal call. Close the PR so it doesn't sit open forever.
+            // agent-uncertain stays open because a human still needs to look
+            // at it; only agent-rejected is auto-closed here.
+            if (result.labels.includes('agent-rejected')) {
+              await github.rest.pulls.update({
+                owner: pr.owner, repo: pr.repo, pull_number: pr.number,
+                state: 'closed',
               });
             }
 
