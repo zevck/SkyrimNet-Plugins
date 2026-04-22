@@ -31,8 +31,6 @@
         "title",
         "tagline",
         "author",
-        "version",
-        "skyrimnet_version",
         "tags",
         "nsfw",
         "mods",
@@ -50,6 +48,13 @@
         "type": {
           "enum": ["bundle", "listing"],
           "description": "Copied from manifest.json. Controls dashboard card rendering (install button vs external-link button) and the 'installable only' filter in browse."
+        },
+        "external_url": {
+          "type": "string",
+          "pattern": "^https://",
+          "minLength": 12,
+          "maxLength": 2000,
+          "description": "Required for listings, absent for bundles. Mirrored from manifest.external_url so the browse page can render an 'open external' link without fetching the full manifest."
         },
         "title": {
           "type": "string",
@@ -146,11 +151,14 @@
       "allOf": [
         {
           "if": { "properties": { "type": { "const": "bundle" } }, "required": ["type"] },
-          "then": { "required": ["contents"] }
+          "then": { "required": ["contents", "version", "skyrimnet_version"] }
         },
         {
           "if": { "properties": { "type": { "const": "listing" } }, "required": ["type"] },
-          "then": { "not": { "required": ["contents"] } }
+          "then": {
+            "required": ["external_url"],
+            "not": { "required": ["contents"] }
+          }
         }
       ]
     }

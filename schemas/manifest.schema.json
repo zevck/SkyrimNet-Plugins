@@ -4,7 +4,7 @@
   "title": "SkyrimNet Plugin Manifest",
   "description": "Metadata for a plugin submission. One manifest.json per plugin directory.\n\nThis schema is deliberately permissive on per-field formatting because the SkyrimNet dashboard is the only supported submission path and is the authoritative source of truth for how fields are shaped. The dashboard generates titles, taglines, descriptions, versions, tags, mod lists, and every other author-facing field, so revalidating their exact character patterns here would only produce false positives when the dashboard evolves.\n\nWhat this schema still enforces is structural: which fields are required, their fundamental types, the bundle-vs-listing discriminator, conditional requirements (listings need external_url, action plugins need an invocation block with source_mods), and basic safety rules (external URLs must be http(s), strings must be non-empty, sanity size ceilings). Cross-file rules (title uniqueness, author matching, invocation-required-if-actions, listing-has-no-content-files) live in validate.yml, not here.\n\nIf you are reading this because the dashboard changed and manifests no longer validate, the fix is usually to relax the schema further — not tighten it.",
   "type": "object",
-  "required": ["type", "title", "tagline", "description", "author", "version", "skyrimnet_version", "nsfw"],
+  "required": ["type", "title", "tagline", "description", "author", "nsfw"],
   "additionalProperties": false,
   "properties": {
     "type": {
@@ -174,7 +174,10 @@
     },
     {
       "if": { "properties": { "type": { "const": "bundle" } }, "required": ["type"] },
-      "then": { "not": { "required": ["external_url"] } }
+      "then": {
+        "required": ["version", "skyrimnet_version"],
+        "not": { "required": ["external_url"] }
+      }
     }
   ]
 }

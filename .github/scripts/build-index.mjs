@@ -118,21 +118,29 @@ if (!fs.existsSync(PLUGINS_DIR)) {
           })).filter(m => m.file)
         : [];
 
-      // Build index entry
+      // Build index entry. version / skyrimnet_version only apply to bundles
+      // — listings point at external content whose version is the upstream's
+      // concern, not ours.
       const entry = {
         id: pluginId,
         type: manifest.type,
         title: manifest.title,
         tagline: manifest.tagline,
         author: manifest.author,
-        version: manifest.version,
-        skyrimnet_version: manifest.skyrimnet_version,
         tags: Array.isArray(manifest.tags) ? manifest.tags : [],
         nsfw: !!manifest.nsfw,
         mods,
         first_published: firstPublished || new Date().toISOString(),
         last_updated: lastUpdated || new Date().toISOString(),
       };
+
+      if (manifest.type === 'bundle') {
+        entry.version = manifest.version;
+        entry.skyrimnet_version = manifest.skyrimnet_version;
+      }
+      if (manifest.type === 'listing' && typeof manifest.external_url === 'string') {
+        entry.external_url = manifest.external_url;
+      }
 
       if (contents !== undefined) {
         entry.contents = contents;
