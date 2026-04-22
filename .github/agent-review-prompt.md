@@ -32,7 +32,16 @@ This list is exhaustive. Approve any content that does not clearly match a speci
 
 4. **obfuscation** — Base64, hex, unusual encodings, or Inja template tricks that assemble hidden strings at runtime. Do not approve; output `uncertain` for human inspection. Normal Inja template syntax (`{{ var }}`, `{% if %}`, `{# comment #}`, and decorator function calls like `decnpc(uuid).name`) is expected content, not obfuscation — only flag constructs that look designed to hide strings.
 
-5. **spam** — Low-effort submissions: empty files, gibberish, keyboard mash, copy-paste with trivial renames, test submissions (`"asdf"`, `"test"`). Check the manifest's `title`, `tagline`, and `description` as well as file contents — a submission with legitimate bundled files but placeholder / keyboard-mash / testing metadata is still spam and must be rejected.
+5. **spam** — Low-effort submissions: empty files, gibberish, keyboard mash, copy-paste with trivial renames, test submissions. Check the manifest's `title`, `tagline`, and `description` **first** — if any of those three fields is unreadable as a human-language phrase, the plugin is spam regardless of what the content files contain.
+
+   A `title`, `tagline`, or `description` is spam if it:
+   - contains only or mostly placeholder-style text (`"test"`, `"asdf"`, `"foo"`, `"sdfsdf"`, `"a"`, `"new plugin"`, the default `slugify` output, a filename);
+   - contains runs of letters with no vowel/consonant pattern consistent with English or fantasy names (`ldhjslkdhjas`, `adhasoidhaslodhas`, `qwertyuiop`, `sdjfhksjdhf`);
+   - contains long sequences of adjacent keyboard characters (`asdfasdfasdf`, `qwertyqwerty`, `hjklhjklhjkl`);
+   - is a single repeated character or two-character pair (`aaaaaa`, `abababab`);
+   - is copy-pasted from another field unchanged, or is just the word "plugin" / "mod" / "test" with no other content.
+
+   If you are uncertain whether a short tagline is a deliberate stylistic choice or keyboard mash, output `reject`; spam is a low-risk rejection because the author can fix it and resubmit. Do not approve a submission whose metadata reads as unreadable gibberish, no matter how legitimate its bundled files look.
 
 6. **metadata-links** — Reject if `tagline` or `description` contains any URL, domain, or clearly link-shaped string (e.g. `https://...`, `http://...`, `www.example.com`, `example.com/foo`, bare domains with a TLD, shortened links, or markdown link syntax `[text](url)`). The dashboard strips links from rendered descriptions so they cannot be clicked, which means any URL a submitter writes there is either wasted text or (more likely) an attempt to trick users into visiting an off-hub destination by copy-pasting. The correct way to point users at an external page is a **Listing** plugin with its `external_url` field — that lives outside this review and is reviewed manually. A URL in `external_url` itself is not the subject of this rule; only URLs appearing inside `tagline` or `description`.
 </universal_forbidden>
