@@ -360,13 +360,10 @@ if (typeof manifest.author === "string") {
   }
 }
 
-// Type gate: listing is not yet supported
-if (manifest.type === "listing") {
-  addError(
-    manifestPath,
-    "Listing plugins are not yet supported. This will be enabled in a future release. For now, only 'bundle' type plugins can be published.",
-  );
-}
+// Listings are now supported and route to manual-review (see routeOrFail
+// below). The schema enforces that listings have an external_url and no
+// content files, so the structural checks above already catch malformed
+// listing submissions — nothing to gate here.
 
 // Slug consistency (re-slugifying the manifest title and comparing to the
 // directory name) used to live here, but it was dropped because the dashboard
