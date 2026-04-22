@@ -1,0 +1,40 @@
+name: RSE_Invite
+description: Use this action when you want to accept {{player_name}}'s invitation to ride together on their horse. Only use if {{player_name}} has asked you to ride with them. You will share their horse when they mount.
+questEditorId: rshCore
+scriptName: rshinvitescript
+executionFunctionName: SetPassenger
+parameterMapping:
+  - type: static
+    value: "\"Follower2\""
+    name: akAlias
+    description: Static ReferenceAlias parameter
+  - type: speaker
+    name: newPassenger
+    description: Speaker Actor parameter (triggering entity)
+  - type: static
+    value: "\"rshHorseFriendToken\""
+    name: Token
+    description: Static MiscObject parameter
+  - type: static
+    value: "\"Passenger\""
+    name: notificationPrefix
+    description: Static string parameter
+enabled: false
+eligibilityRules:
+  - conditions:
+      - decoratorName: is_hostile_to_actor
+        arguments:
+          - currentActor
+          - player
+        comparisonOperator: ==
+        expectedValue: false
+      - decoratorName: get_inventory
+        arguments:
+          - currentActor
+        comparisonOperator: not_contains
+        expectedValue: rshHorseFriendToken
+      - decoratorName: get_inventory
+        arguments:
+          - currentActor
+        comparisonOperator: not_contains
+        expectedValue: rshHorseCrimeToken

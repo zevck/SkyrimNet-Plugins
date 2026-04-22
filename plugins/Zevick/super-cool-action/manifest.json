@@ -1,0 +1,36 @@
+{
+  "type": "bundle",
+  "title": "Super Cool Action",
+  "tagline": "Wow this action is so super cool",
+  "description": "Words cannot describe how awesome this action is",
+  "author": "Zevick",
+  "tags": [
+    "super",
+    "cool",
+    "action"
+  ],
+  "nsfw": false,
+  "icon": "wrench",
+  "mods": [],
+  "requirements": [],
+  "version": "1.0.0",
+  "skyrimnet_version": "0.19.0",
+  "files": [
+    "actions/rse_invite.yaml"
+  ],
+  "invocation": {
+    "purpose": "It does super cool things",
+    "actions": [
+      {
+        "file": "actions/rse_invite.yaml",
+        "source_mods": [
+          {
+            "name": "RSE - Shoulder or Saddle",
+            "url": "https://www.nexusmods.com/skyrimspecialedition/mods/170232"
+          }
+        ]
+      }
+    ],
+    "attestation": "I attest that I tested these actions in-game and observed no save corruption, crashes, or quest breakage."
+  }
+}
