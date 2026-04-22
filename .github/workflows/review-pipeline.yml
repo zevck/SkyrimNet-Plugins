@@ -344,6 +344,23 @@ jobs:
               core.info(`PR #${pr.number} merged.`);
             } catch (e) {
               core.setFailed(`Merge failed: ${e.message}`);
+              return;
+            }
+
+            // The repo's "Automatically delete head branches" setting only
+            // fires for UI merges, not API merges triggered by a GitHub
+            // Action using GITHUB_TOKEN. Delete the ref explicitly so bot-
+            // merged submission branches don't pile up. Fails softly: if
+            // the branch is already gone or on a fork, we just log.
+            try {
+              await github.rest.git.deleteRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: `heads/${pr.head.ref}`,
+              });
+              core.info(`Deleted head branch '${pr.head.ref}'.`);
+            } catch (e) {
+              core.info(`Could not delete head branch '${pr.head.ref}': ${e.message}`);
             }
 
   # ---------------------------------------------------------------------------
