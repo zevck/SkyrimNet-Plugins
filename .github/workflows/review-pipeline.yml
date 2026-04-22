@@ -155,6 +155,87 @@ jobs:
               });
             }
 
+      # Surface manifest.invocation in the PR body so reviewers don't have to
+      # open the JSON file to see what the action does, which mods it calls
+      # into, and whether the author attested to testing. Only runs when
+      # validation passed and the plugin contains actions.
+      - name: Inject invocation summary into PR body
+        if: always()
+        uses: actions/github-script@v7
+        env:
+          PR_DIR: ${{ github.workspace }}/pr
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            // Locate the single plugin dir under plugins/{author}/{slug}/.
+            const pluginsRoot = path.join(process.env.PR_DIR, 'plugins');
+            if (!fs.existsSync(pluginsRoot)) return;
+            let pluginDir = null;
+            for (const author of fs.readdirSync(pluginsRoot)) {
+              const authorDir = path.join(pluginsRoot, author);
+              if (!fs.statSync(authorDir).isDirectory()) continue;
+              for (const slug of fs.readdirSync(authorDir)) {
+                const slugDir = path.join(authorDir, slug);
+                if (fs.statSync(slugDir).isDirectory()) { pluginDir = slugDir; break; }
+              }
+              if (pluginDir) break;
+            }
+            if (!pluginDir) return;
+
+            const manifestPath = path.join(pluginDir, 'manifest.json');
+            if (!fs.existsSync(manifestPath)) return;
+            let manifest;
+            try {
+              manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+            } catch (e) {
+              console.log(`Could not parse manifest.json: ${e.message}`);
+              return;
+            }
+            const inv = manifest.invocation;
+            if (!inv) return;
+
+            const lines = ['<!-- invocation-summary:start -->', '## Action Review Details', ''];
+            if (inv.purpose) {
+              lines.push('**Purpose**', '', inv.purpose, '');
+            }
+            if (Array.isArray(inv.actions) && inv.actions.length > 0) {
+              lines.push('**Actions**', '');
+              for (const a of inv.actions) {
+                lines.push(`- \`${a.file}\``);
+                if (a.vanilla === true) {
+                  lines.push('  - Vanilla Papyrus only (no community mod).');
+                } else if (Array.isArray(a.source_mods) && a.source_mods.length > 0) {
+                  for (const m of a.source_mods) {
+                    lines.push(`  - [${m.name}](${m.url})`);
+                  }
+                }
+              }
+              lines.push('');
+            }
+            if (inv.attestation) {
+              lines.push('**Author attestation**', '', `> ${inv.attestation}`, '');
+            }
+            lines.push('<!-- invocation-summary:end -->');
+            const block = lines.join('\n');
+
+            const pr = context.issue;
+            const { data: prData } = await github.rest.pulls.get({
+              owner: pr.owner, repo: pr.repo, pull_number: pr.number,
+            });
+            const existing = prData.body || '';
+            const re = /<!-- invocation-summary:start -->[\s\S]*?<!-- invocation-summary:end -->/;
+            const nextBody = re.test(existing)
+              ? existing.replace(re, block)
+              : (existing.trim() ? `${existing.trim()}\n\n${block}\n` : `${block}\n`);
+            if (nextBody !== existing) {
+              await github.rest.pulls.update({
+                owner: pr.owner, repo: pr.repo, pull_number: pr.number,
+                body: nextBody,
+              });
+            }
+
       - name: Determine route for next stage
         id: route
         if: always()
