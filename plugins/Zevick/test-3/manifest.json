@@ -1,0 +1,25 @@
+{
+  "type": "bundle",
+  "title": "Test 3",
+  "tagline": "dasdasdas das",
+  "description": "as dasdas das das dasdas",
+  "author": "Zevick",
+  "tags": [
+    "test"
+  ],
+  "nsfw": false,
+  "icon": "package",
+  "mods": [
+    {
+      "name": "Dawnguard.esm",
+      "file": "dawnguard.esm",
+      "required": true
+    }
+  ],
+  "requirements": [],
+  "version": "1.0.0",
+  "skyrimnet_version": "0.19.0",
+  "files": [
+    "prompts/diary_stolen.prompt"
+  ]
+}

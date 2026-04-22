@@ -1,7 +1,36 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-22T06:58:14.172Z",
+  "generated_at": "2026-04-22T08:56:19.766Z",
   "plugins": [
+    {
+      "id": "plugins/Zevick/test-3",
+      "type": "bundle",
+      "title": "Test 3",
+      "tagline": "dasdasdas das",
+      "author": "Zevick",
+      "tags": [
+        "test"
+      ],
+      "nsfw": false,
+      "icon": "package",
+      "mods": [
+        {
+          "name": "Dawnguard.esm",
+          "file": "dawnguard.esm",
+          "required": true
+        }
+      ],
+      "first_published": "2026-04-22T08:56:04Z",
+      "last_updated": "2026-04-22T08:56:04Z",
+      "version": "1.0.0",
+      "skyrimnet_version": "0.19.0",
+      "contents": {
+        "triggers": 0,
+        "actions": 0,
+        "prompts": 1,
+        "knowledge": 0
+      }
+    },
     {
       "id": "plugins/Zevick/s-t-f-u-skyrim-talk-filter-utility",
       "type": "listing",
@@ -14,6 +43,7 @@
         "stfu"
       ],
       "nsfw": false,
+      "icon": "package",
       "mods": [],
       "first_published": "2026-04-22T06:57:17Z",
       "last_updated": "2026-04-22T06:57:17Z",
@@ -30,6 +60,7 @@
         "diary"
       ],
       "nsfw": false,
+      "icon": "package",
       "mods": [],
       "first_published": "2026-04-22T05:57:56Z",
       "last_updated": "2026-04-22T05:57:56Z",
@@ -45,6 +76,7 @@
         "test"
       ],
       "nsfw": false,
+      "icon": "package",
       "mods": [],
       "first_published": "2026-04-21T11:53:41Z",
       "last_updated": "2026-04-21T11:53:41Z",
@@ -67,6 +99,7 @@
         "test"
       ],
       "nsfw": true,
+      "icon": "package",
       "mods": [],
       "first_published": "2026-04-21T11:38:11Z",
       "last_updated": "2026-04-21T11:38:11Z",
@@ -92,6 +125,7 @@
         "prompt"
       ],
       "nsfw": false,
+      "icon": "package",
       "mods": [],
       "first_published": "2026-04-21T09:07:50Z",
       "last_updated": "2026-04-21T09:07:50Z",
@@ -116,6 +150,7 @@
         "restoration"
       ],
       "nsfw": false,
+      "icon": "package",
       "mods": [],
       "first_published": "2026-04-21T04:10:46-04:00",
       "last_updated": "2026-04-21T04:10:46-04:00",
@@ -141,6 +176,7 @@
         "werewolf"
       ],
       "nsfw": false,
+      "icon": "package",
       "mods": [],
       "first_published": "2026-04-21T04:10:46-04:00",
       "last_updated": "2026-04-21T04:10:46-04:00",
@@ -166,6 +202,7 @@
         "lore"
       ],
       "nsfw": false,
+      "icon": "package",
       "mods": [
         {
           "name": "Skyrim",
