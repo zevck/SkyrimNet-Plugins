@@ -398,15 +398,12 @@ jobs:
   # ---------------------------------------------------------------------------
   auto-merge:
     needs: [validate, agent-review]
-    # Deletion PRs skip the agent (no content to scan) and come straight from
-    # validate with route='deletion'. The `always()` wrapper is required so
-    # this job still runs when agent-review was skipped rather than failed.
-    if: |
-      always() && !cancelled()
-      && (
-        needs.agent-review.result == 'success' && needs.agent-review.outputs.decision == 'agent-approved'
-        || needs.agent-review.result == 'skipped' && needs.validate.outputs.route == 'deletion'
-      )
+    # Deletion PRs skip agent-review (no content to scan) and come straight
+    # from validate with route='deletion'. Kept on a single line so the
+    # expression parser doesn't choke on multi-line `|` literals, and
+    # `always()` is the entry point so the job evaluates even when
+    # agent-review was skipped rather than succeeded.
+    if: always() && !cancelled() && ((needs.agent-review.result == 'success' && needs.agent-review.outputs.decision == 'agent-approved') || (needs.validate.result == 'success' && needs.validate.outputs.route == 'deletion'))
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
@@ -486,6 +483,12 @@ jobs:
   # ---------------------------------------------------------------------------
   build-index:
     needs: auto-merge
+    # auto-merge uses `always() && ...` so its "skipped" and "success" states
+    # both flow downstream as not-failure. Make this explicit — rebuild the
+    # index only when auto-merge actually succeeded. Without this, deletion
+    # PRs were silently bypassing the rebuild because of how GitHub Actions
+    # propagates status through jobs gated by `always()`.
+    if: always() && needs.auto-merge.result == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
