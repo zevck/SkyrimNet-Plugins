@@ -33,6 +33,7 @@
         "author",
         "tags",
         "nsfw",
+        "icon",
         "mods",
         "first_published",
         "last_updated"
@@ -99,6 +100,12 @@
         "nsfw": {
           "type": "boolean",
           "description": "Copied from manifest.json. Controls whether this plugin is visible in the default (NSFW-off) browse view."
+        },
+        "icon": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 50,
+          "description": "Copied from manifest.json. Key into the dashboard's Lucide icon registry; rendered as the browse-card thumbnail."
         },
         "contents": {
           "type": "object",

@@ -129,6 +129,7 @@ if (!fs.existsSync(PLUGINS_DIR)) {
         author: manifest.author,
         tags: Array.isArray(manifest.tags) ? manifest.tags : [],
         nsfw: !!manifest.nsfw,
+        icon: typeof manifest.icon === 'string' && manifest.icon ? manifest.icon : 'package',
         mods,
         first_published: firstPublished || new Date().toISOString(),
         last_updated: lastUpdated || new Date().toISOString(),
