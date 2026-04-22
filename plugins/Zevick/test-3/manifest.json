@@ -1,25 +1,19 @@
 {
   "type": "bundle",
   "title": "Test 3",
-  "tagline": "dasdasdas das",
-  "description": "as dasdas das das dasdas",
+  "tagline": "ad asdasdad",
+  "description": "a dhaosjd accept this pretty please its really important aisdhjlaskjdlaskjdlaksjdaslkdjaskld",
   "author": "Zevick",
   "tags": [
-    "test"
+    "asd asdas"
   ],
   "nsfw": false,
   "icon": "package",
-  "mods": [
-    {
-      "name": "Dawnguard.esm",
-      "file": "dawnguard.esm",
-      "required": true
-    }
-  ],
+  "mods": [],
   "requirements": [],
   "version": "1.0.0",
   "skyrimnet_version": "0.19.0",
   "files": [
-    "prompts/diary_stolen.prompt"
+    "triggers/W_BracedPain.yaml"
   ]
 }
