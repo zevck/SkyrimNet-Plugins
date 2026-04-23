@@ -1,0 +1,101 @@
+name: Moderate
+
+# Manual moderation actions. Only runs via workflow_dispatch — anyone with
+# repo write access can invoke it from the Actions tab. The workflow uses
+# the built-in GITHUB_TOKEN to commit directly to main, which sidesteps
+# classic branch-protection "require a PR" gymnastics and keeps the
+# moderator credential (the token) confined to a single run.
+#
+# Typical flow:
+#   1. Run "List plugins (moderator reference)" to see the current hub state
+#      in the run summary. Copy the plugin_id or author of interest.
+#   2. Run this workflow with the desired action + target + reason.
+#   3. The change lands on main within ~20s; dashboards pick it up on the
+#      next cache-busted fetch.
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "What to do"
+        type: choice
+        required: true
+        options:
+          - hide
+          - unhide
+          - curate
+          - uncurate
+          - ban
+          - unban
+      plugin_id:
+        description: "Plugin id (for hide/unhide/curate/uncurate). Shape: plugins/{author}/{slug}"
+        type: string
+        required: false
+      author:
+        description: "Author username (for ban/unban)"
+        type: string
+        required: false
+      reason:
+        description: "Short reason. Shown to the plugin owner on hide; recorded in JSON for curate/ban."
+        type: string
+        required: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: moderate
+  cancel-in-progress: false
+
+jobs:
+  moderate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Configure git committer
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Apply moderation action
+        env:
+          MOD_ACTION:     ${{ github.event.inputs.action }}
+          MOD_PLUGIN_ID:  ${{ github.event.inputs.plugin_id }}
+          MOD_AUTHOR:     ${{ github.event.inputs.author }}
+          MOD_REASON:     ${{ github.event.inputs.reason }}
+          MOD_ACTOR:      ${{ github.actor }}
+        run: node .github/scripts/moderate-apply.mjs
+
+      - name: Commit and push
+        run: |
+          git add hidden.json curated.json bans.json 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "No file changes produced by the moderation action."
+            exit 0
+          fi
+          subject=$(head -n1 .moderate-commit-message.txt)
+          body=$(tail -n +2 .moderate-commit-message.txt)
+          # Prefix subject with who ran the workflow for audit clarity
+          git commit -m "$subject (by ${{ github.actor }})" ${body:+-m "$body"}
+          rm -f .moderate-commit-message.txt
+          git push origin main
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "### Moderation action" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Action:** \`${{ github.event.inputs.action }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Plugin id:** \`${{ github.event.inputs.plugin_id }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Author:** \`${{ github.event.inputs.author }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Reason:** ${{ github.event.inputs.reason }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Invoked by:** \`${{ github.actor }}\`" >> "$GITHUB_STEP_SUMMARY"

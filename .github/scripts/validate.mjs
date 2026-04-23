@@ -243,6 +243,25 @@ try {
 // with a `ready-for-agent-review` label so agent-review → auto-merge still
 // runs; agent-review sees zero content files and auto-approves ("No content
 // files to review.").
+// Maintainer infra PR: every file the PR touches (added, modified, or
+// removed) lives OUTSIDE `plugins/`. Typical cases: editing hidden.json,
+// curated.json, bans.json, workflows, scripts, docs. We route these to
+// `manual-review` so they don't get auto-closed by the "no plugin files
+// found" error path, and so the agent reviewer doesn't try to scan them.
+// Maintainers merge these by hand through the GitHub UI.
+const allFiles = [...changedFiles, ...deletedFiles];
+const isInfraOnly = allFiles.length > 0 && allFiles.every((f) => !f.startsWith("plugins/"));
+if (isInfraOnly) {
+  result.labels.push("manual-review");
+  result.manualReason =
+    `This PR only modifies repository infrastructure (not plugin content). ` +
+    `Routing to manual review; a maintainer should merge it directly once happy.`;
+  console.log(
+    `Infra-only PR detected (${allFiles.length} file(s) outside plugins/). Routing to manual review.`,
+  );
+  finish();
+}
+
 const isDeletionPR = changedFiles.length === 0 && deletedFiles.length > 0;
 if (isDeletionPR) {
   const deletionRoots = new Set();
