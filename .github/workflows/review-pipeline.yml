@@ -15,11 +15,19 @@ name: Plugin submission review pipeline
 on:
   pull_request:
     types: [opened, synchronize, reopened]
-    # Skip PRs opened by the Moderate workflow — those touch only
-    # hidden.json / curated.json / bans.json and validate.mjs routes them
-    # to manual-review anyway. Letting this pipeline run on them just
-    # burns CI and triggers GitHub's "workflow needs approval" gate every
-    # time (because a workflow-opened PR defers CI by default).
+    # Skip PRs whose changes are confined to moderator-managed files.
+    # The Moderate workflow opens PRs touching only hidden.json /
+    # curated.json / bans.json; running this pipeline on them just burns
+    # CI and triggers GitHub's "workflow needs approval" gate (because
+    # workflow-opened PRs defer CI until a human approves). paths-ignore
+    # evaluates at trigger time, so the run is never scheduled at all —
+    # as opposed to a job-level `if:`, which only takes effect after the
+    # approval gate is cleared. PRs that touch these files AND something
+    # under plugins/ still trigger the pipeline normally.
+    paths-ignore:
+      - 'hidden.json'
+      - 'curated.json'
+      - 'bans.json'
 
 permissions:
   contents: write        # auto-merge job writes to the repo
