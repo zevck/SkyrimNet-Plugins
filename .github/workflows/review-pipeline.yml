@@ -34,6 +34,7 @@ jobs:
     timeout-minutes: 5
     outputs:
       route: ${{ steps.route.outputs.route }}
+      plugin_root: ${{ steps.route.outputs.plugin_root }}
 
     steps:
       - name: Checkout base
@@ -248,6 +249,8 @@ jobs:
           fi
           success=$(node -e "console.log(JSON.parse(require('fs').readFileSync('$GITHUB_WORKSPACE/validate-result.json','utf8')).success)")
           labels=$(node -e "console.log(JSON.parse(require('fs').readFileSync('$GITHUB_WORKSPACE/validate-result.json','utf8')).labels.join(','))")
+          plugin_root=$(node -e "console.log(JSON.parse(require('fs').readFileSync('$GITHUB_WORKSPACE/validate-result.json','utf8')).plugin_root || '')")
+          echo "plugin_root=$plugin_root" >> "$GITHUB_OUTPUT"
 
           route="validation-failed"
           if [ "$success" = "true" ]; then
@@ -303,6 +306,11 @@ jobs:
         env:
           BASE_DIR: ${{ github.workspace }}/base
           PR_DIR: ${{ github.workspace }}/pr
+          # validate.mjs already identified which plugins/{author}/{slug}/ dir
+          # the PR modifies; pass it through so agent-review reviews that
+          # exact directory instead of walking the filesystem (which also
+          # contains every other plugin on main from the sparse checkout).
+          PLUGIN_ROOT: ${{ needs.validate.outputs.plugin_root }}
           RESULT_FILE: ${{ github.workspace }}/agent-review-result.json
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # Model is configurable via repository variables so maintainers can

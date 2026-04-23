@@ -69,6 +69,11 @@ const result = {
   errors: [],
   warnings: [],
   comment: null,
+  // Identified plugin directory (plugins/{author}/{slug}) relative to the
+  // repo root, populated once path-scope parsing succeeds. Consumed by
+  // agent-review.mjs so it doesn't have to re-walk the PR checkout and
+  // pick the wrong plugin dir on re-submissions to already-merged plugins.
+  plugin_root: null,
 };
 
 function addError(file, message) {
@@ -430,6 +435,7 @@ if (pluginRoots.size > 1) {
 
 const pluginRoot = [...pluginRoots][0];
 const pluginAbs = path.join(env.PR_DIR, pluginRoot);
+result.plugin_root = pluginRoot;
 
 // ----- Manifest ------------------------------------------------------------
 

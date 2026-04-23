@@ -115,13 +115,28 @@ try {
 }
 
 async function main() {
-  // 1. Find the plugin directory. validate.yml already enforced "exactly one
-  //    plugin per PR" so we should find exactly one plugins/{id}/{slug}/ dir.
-  const pluginDir = findPluginDir();
-  if (!pluginDir) {
-    addError("Could not locate plugin directory in PR_DIR. validate.yml should have caught this.");
-    finishSoftFail("The plugin directory was not found during agent review setup.");
-    return;
+  // 1. Prefer the plugin root that validate.mjs identified — that's the
+  //    authoritative answer about which plugin the PR modifies. The sparse
+  //    checkout also contains every other plugin on main, so a filesystem
+  //    walk can pick the wrong dir (e.g. a listing plugin with no content,
+  //    which then reviews as "0 files → auto-approved" regardless of the
+  //    real submission). Fall back to findPluginDir only if PLUGIN_ROOT
+  //    isn't set (older workflow versions).
+  let pluginDir;
+  if (process.env.PLUGIN_ROOT) {
+    pluginDir = path.join(env.PR_DIR, process.env.PLUGIN_ROOT);
+    if (!fs.existsSync(pluginDir)) {
+      addError(`PLUGIN_ROOT=${process.env.PLUGIN_ROOT} does not exist in PR_DIR.`);
+      finishSoftFail("The plugin directory passed in from validate was not found on disk.");
+      return;
+    }
+  } else {
+    pluginDir = findPluginDir();
+    if (!pluginDir) {
+      addError("Could not locate plugin directory in PR_DIR. validate.yml should have caught this.");
+      finishSoftFail("The plugin directory was not found during agent review setup.");
+      return;
+    }
   }
   const pluginRelPath = path.relative(env.PR_DIR, pluginDir).replace(/\\/g, "/");
   console.log(`Reviewing: ${pluginRelPath}`);
