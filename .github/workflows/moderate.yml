@@ -47,6 +47,11 @@ concurrency:
   group: moderate
   cancel-in-progress: false
 
+env:
+  # Silence the Node 20 deprecation warning on actions/checkout +
+  # actions/setup-node. Safe to enable now; will become default June 2026.
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 jobs:
   moderate:
     runs-on: ubuntu-latest
@@ -77,17 +82,27 @@ jobs:
 
       - name: Commit and push
         run: |
-          git add hidden.json curated.json bans.json 2>/dev/null || true
+          set -e
+          for f in hidden.json curated.json bans.json; do
+            if [ -f "$f" ]; then git add "$f"; fi
+          done
           if git diff --cached --quiet; then
             echo "No file changes produced by the moderation action."
             exit 0
           fi
+          if [ ! -f .moderate-commit-message.txt ]; then
+            echo "Expected .moderate-commit-message.txt but it is missing — the apply script likely failed silently."
+            exit 1
+          fi
           subject=$(head -n1 .moderate-commit-message.txt)
           body=$(tail -n +2 .moderate-commit-message.txt)
-          # Prefix subject with who ran the workflow for audit clarity
           git commit -m "$subject (by ${{ github.actor }})" ${body:+-m "$body"}
           rm -f .moderate-commit-message.txt
-          git push origin main
+          if ! git push origin main; then
+            echo ""
+            echo "::error::Push to main failed. If your branch protection / ruleset requires a PR, add 'github-actions[bot]' to the ruleset's Bypass list with mode 'Always' so this workflow can commit directly."
+            exit 1
+          fi
 
       - name: Summary
         if: always()
