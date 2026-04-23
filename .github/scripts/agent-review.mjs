@@ -503,7 +503,12 @@ function buildComment(final, chunkResults, nsfwMode) {
 
   if (final.decision === "reject") {
     parts.push("");
-    parts.push("This PR will not auto-merge. If you believe the rejection is incorrect, fix the content and push an update (which will re-run review) or contact a moderator.");
+    parts.push(
+      "This PR will be closed automatically. To resubmit, adjust the " +
+      "flagged content in SkyrimNet (or flip the appropriate manifest flag, " +
+      "e.g. `nsfw: true`) and publish again from the dashboard — that opens " +
+      "a fresh review. Replies on this PR are not monitored.",
+    );
   } else if (final.decision === "uncertain") {
     parts.push("");
     parts.push("This PR has been escalated to manual review. A human reviewer will look at it.");

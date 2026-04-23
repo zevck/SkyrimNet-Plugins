@@ -147,14 +147,23 @@ jobs:
 
             // Hard validation failure: structural rejection that no reviewer
             // should look at — close the PR so the dashboard's "Pending" list
-            // doesn't leave the author's submission dangling. Pushing new
-            // commits to the branch auto-reopens the PR and restarts the
-            // pipeline, so the author can still iterate.
+            // doesn't leave the author's submission dangling, then delete the
+            // head branch. Authors are directed by the PR comment to
+            // re-publish from the dashboard (which opens a fresh branch)
+            // rather than push to this one.
             if (result.labels.includes('validation-failed')) {
               await github.rest.pulls.update({
                 owner: pr.owner, repo: pr.repo, pull_number: pr.number,
                 state: 'closed',
               });
+              try {
+                await github.rest.git.deleteRef({
+                  owner: pr.owner, repo: pr.repo,
+                  ref: `heads/${context.payload.pull_request.head.ref}`,
+                });
+              } catch (e) {
+                core.info(`Could not delete rejected head branch: ${e.message}`);
+              }
             }
 
       # Surface manifest.invocation in the PR body so reviewers don't have to
@@ -366,14 +375,24 @@ jobs:
             }
 
             // Agent hard-rejection: content violates the forbidden list, not
-            // a marginal call. Close the PR so it doesn't sit open forever.
-            // agent-uncertain stays open because a human still needs to look
-            // at it; only agent-rejected is auto-closed here.
+            // a marginal call. Close the PR, then delete the head branch —
+            // authors re-publish from the dashboard (fresh branch) rather
+            // than push to this one. agent-uncertain stays open because a
+            // human still needs to look at it; only agent-rejected is
+            // auto-closed here.
             if (result.labels.includes('agent-rejected')) {
               await github.rest.pulls.update({
                 owner: pr.owner, repo: pr.repo, pull_number: pr.number,
                 state: 'closed',
               });
+              try {
+                await github.rest.git.deleteRef({
+                  owner: pr.owner, repo: pr.repo,
+                  ref: `heads/${context.payload.pull_request.head.ref}`,
+                });
+              } catch (e) {
+                core.info(`Could not delete rejected head branch: ${e.message}`);
+              }
             }
 
       - name: Determine decision for next stage
