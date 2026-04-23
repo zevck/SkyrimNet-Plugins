@@ -4,8 +4,6 @@
   "tagline": "Prompt to add awareness for carried carcasses",
   "description": "# Simple Hunting Overhaul Integration\nIncludes a prompt to add NPC awareness of carcasses being carried by the player or other NPCs.",
   "author": "Zevick",
-  "version": "1.0.0",
-  "skyrimnet_version": "0-19-0-0",
   "tags": [
     "simple hunting overhaul",
     "hunting",
@@ -13,9 +11,12 @@
     "prompt"
   ],
   "nsfw": false,
+  "icon": "package",
   "mods": [],
   "requirements": [],
+  "version": "1.0.0",
+  "skyrimnet_version": "0.19.0",
   "files": [
-    "prompts/submodules/character_bio/2706_simple_hunting.prompt"
+    "triggers/StressFear_Bandits.yaml"
   ]
 }
