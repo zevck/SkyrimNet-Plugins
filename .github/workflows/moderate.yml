@@ -41,7 +41,8 @@ on:
         required: false
 
 permissions:
-  contents: write
+  contents: write        # push moderation branch
+  pull-requests: write   # open + merge the moderation PR
 
 concurrency:
   group: moderate
@@ -80,7 +81,8 @@ jobs:
           MOD_ACTOR:      ${{ github.actor }}
         run: node .github/scripts/moderate-apply.mjs
 
-      - name: Commit and push
+      - name: Commit to a short-lived branch
+        id: commit
         run: |
           set -e
           for f in hidden.json curated.json bans.json; do
@@ -88,21 +90,111 @@ jobs:
           done
           if git diff --cached --quiet; then
             echo "No file changes produced by the moderation action."
+            echo "skip=1" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           if [ ! -f .moderate-commit-message.txt ]; then
-            echo "Expected .moderate-commit-message.txt but it is missing — the apply script likely failed silently."
+            echo "Expected .moderate-commit-message.txt but it is missing — apply script failed silently."
             exit 1
           fi
           subject=$(head -n1 .moderate-commit-message.txt)
           body=$(tail -n +2 .moderate-commit-message.txt)
+          branch="moderate/$(date -u +%Y%m%d%H%M%S)-${{ github.run_id }}"
+          git checkout -b "$branch"
           git commit -m "$subject (by ${{ github.actor }})" ${body:+-m "$body"}
           rm -f .moderate-commit-message.txt
-          if ! git push origin main; then
-            echo ""
-            echo "::error::Push to main failed. If your branch protection / ruleset requires a PR, add 'github-actions[bot]' to the ruleset's Bypass list with mode 'Always' so this workflow can commit directly."
-            exit 1
-          fi
+          git push -u origin "$branch"
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+          echo "subject=$subject" >> "$GITHUB_OUTPUT"
+
+      # Open and merge the moderation PR via the API. Rulesets on main that
+      # require "a pull request before merging" block direct pushes from any
+      # actor, including GITHUB_TOKEN — that's load-bearing protection against
+      # a compromised App writing directly to main. This workflow respects the
+      # rule: it opens a PR (bypassing nothing), then merges it via the API
+      # with the GITHUB_TOKEN, which is allowed because merging a PR is not a
+      # direct push. External contributors can't invoke workflow_dispatch
+      # (requires write access), so this path isn't reachable by untrusted
+      # actors even if they compromise the dashboard App.
+      - name: Open and merge PR
+        if: steps.commit.outputs.skip != '1'
+        uses: actions/github-script@v7
+        env:
+          BRANCH: ${{ steps.commit.outputs.branch }}
+          SUBJECT: ${{ steps.commit.outputs.subject }}
+          MOD_ACTION: ${{ github.event.inputs.action }}
+          MOD_PLUGIN_ID: ${{ github.event.inputs.plugin_id }}
+          MOD_AUTHOR: ${{ github.event.inputs.author }}
+          MOD_REASON: ${{ github.event.inputs.reason }}
+        with:
+          script: |
+            const { BRANCH, SUBJECT, MOD_ACTION, MOD_PLUGIN_ID, MOD_AUTHOR, MOD_REASON } = process.env;
+            const body = [
+              `Moderation action invoked by @${context.actor}.`,
+              '',
+              `- **Action:** \`${MOD_ACTION}\``,
+              MOD_PLUGIN_ID ? `- **Plugin:** \`${MOD_PLUGIN_ID}\`` : '',
+              MOD_AUTHOR ? `- **Author:** \`${MOD_AUTHOR}\`` : '',
+              MOD_REASON ? `- **Reason:** ${MOD_REASON}` : '',
+              '',
+              'Auto-merged by the Moderate workflow. This PR exists solely to satisfy the main-branch ruleset.',
+            ].filter(Boolean).join('\n');
+
+            const { data: pr } = await github.rest.pulls.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: SUBJECT,
+              body,
+              head: BRANCH,
+              base: 'main',
+            });
+            core.info(`Opened PR #${pr.number}`);
+
+            let merged = false;
+            let lastError = null;
+            for (let attempt = 0; attempt < 5; attempt++) {
+              try {
+                await github.rest.pulls.merge({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  pull_number: pr.number,
+                  merge_method: 'squash',
+                });
+                merged = true;
+                break;
+              } catch (e) {
+                lastError = e;
+                const status = e.status || 0;
+                if (status === 405 || status === 409) {
+                  // 405: not mergeable yet (mergeability computation pending)
+                  // 409: head changed; shouldn't happen here, but retry anyway
+                  core.info(`Merge attempt ${attempt + 1} got ${status}; retrying in 2s...`);
+                  await new Promise((r) => setTimeout(r, 2000));
+                  continue;
+                }
+                throw e;
+              }
+            }
+            if (!merged) {
+              core.setFailed(
+                `Failed to auto-merge PR #${pr.number}: ${lastError?.message || 'unknown error'}. ` +
+                `Your main-branch ruleset may require approvals or status checks that ` +
+                `GITHUB_TOKEN cannot satisfy. Review the PR and merge it manually.`,
+              );
+              return;
+            }
+            core.info(`Merged PR #${pr.number}`);
+
+            try {
+              await github.rest.git.deleteRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: `heads/${BRANCH}`,
+              });
+              core.info(`Deleted branch ${BRANCH}`);
+            } catch (e) {
+              core.info(`Could not delete branch ${BRANCH}: ${e.message}`);
+            }
 
       - name: Summary
         if: always()
