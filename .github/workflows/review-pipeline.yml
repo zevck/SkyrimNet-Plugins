@@ -15,6 +15,11 @@ name: Plugin submission review pipeline
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+    # Skip PRs opened by the Moderate workflow — those touch only
+    # hidden.json / curated.json / bans.json and validate.mjs routes them
+    # to manual-review anyway. Letting this pipeline run on them just
+    # burns CI and triggers GitHub's "workflow needs approval" gate every
+    # time (because a workflow-opened PR defers CI by default).
 
 permissions:
   contents: write        # auto-merge job writes to the repo
@@ -30,6 +35,11 @@ jobs:
   # Stage 1 — structural validation
   # ---------------------------------------------------------------------------
   validate:
+    # Skip moderation PRs (branches opened by the Moderate workflow). They
+    # only touch hidden.json/curated.json/bans.json, which this pipeline
+    # would label 'manual-review' and do nothing else with. Skipping avoids
+    # GitHub's "workflow needs approval" gate on PRs opened by workflows.
+    if: ${{ !startsWith(github.head_ref, 'moderate/') }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
