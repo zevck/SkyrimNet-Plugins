@@ -118,6 +118,13 @@ function finish() {
       result.manualReason ?? "This PR will be reviewed by a human. Expect up to a week for action-containing submissions.",
     );
   }
+  if (result.labels.includes("infra-only") && result.errors.length === 0) {
+    parts.push(
+      "### Repository infrastructure change",
+      "",
+      result.manualReason ?? "This PR only modifies repository infrastructure.",
+    );
+  }
   if (parts.length > 0) {
     result.comment = parts.join("\n");
   }
@@ -245,20 +252,50 @@ try {
 // files to review.").
 // Maintainer infra PR: every file the PR touches (added, modified, or
 // removed) lives OUTSIDE `plugins/`. Typical cases: editing hidden.json,
-// curated.json, bans.json, workflows, scripts, docs. We route these to
-// `manual-review` so they don't get auto-closed by the "no plugin files
-// found" error path, and so the agent reviewer doesn't try to scan them.
-// Maintainers merge these by hand through the GitHub UI.
+// curated.json, bans.json, workflows, scripts, docs. Routed to a dedicated
+// `infra-only` label so agent-review.mjs short-circuit-FAILS the gate
+// (the agent has nothing to scan, and a failing required check is what
+// blocks rogue installation tokens from shipping infra changes). A repo
+// admin merges these via the "Merge without waiting for requirements"
+// bypass button; the App can't bypass because it isn't an admin.
 const allFiles = [...changedFiles, ...deletedFiles];
 const isInfraOnly = allFiles.length > 0 && allFiles.every((f) => !f.startsWith("plugins/"));
 if (isInfraOnly) {
-  result.labels.push("manual-review");
+  result.labels.push("infra-only");
   result.manualReason =
     `This PR only modifies repository infrastructure (not plugin content). ` +
-    `Routing to manual review; a maintainer should merge it directly once happy.`;
+    `The agent-review check is intentionally left red; a repo admin must ` +
+    `bypass the failing check to merge.`;
   console.log(
-    `Infra-only PR detected (${allFiles.length} file(s) outside plugins/). Routing to manual review.`,
+    `Infra-only PR detected (${allFiles.length} file(s) outside plugins/). Routing as infra-only.`,
   );
+  finish();
+}
+
+// Mixed PR: some files under plugins/, some outside. Rejected outright.
+//
+// Without this guard, a rogue installation token could open a PR carrying
+// real plugin content (which the LLM scans + approves) plus a hidden.json
+// edit hitching a ride. The agent only reads plugin content, so the
+// out-of-band file change rides the auto-merge path. There is no
+// legitimate reason to mix the two — dashboard publishes only ever touch
+// plugins/{author}/{slug}/, and infra edits only ever touch top-level
+// files. So we hard-reject as a validation failure (which closes the PR).
+const pluginPathFiles = allFiles.filter((f) => f.startsWith("plugins/"));
+const nonPluginFiles  = allFiles.filter((f) => !f.startsWith("plugins/"));
+if (pluginPathFiles.length > 0 && nonPluginFiles.length > 0) {
+  addError(
+    null,
+    `PR mixes plugin files (under plugins/) with infrastructure files (outside plugins/). ` +
+      `These must be split into separate PRs:\n` +
+      nonPluginFiles.map((f) => `  - ${f} (infra)`).join("\n") +
+      `\n` +
+      pluginPathFiles.map((f) => `  - ${f} (plugin)`).join("\n"),
+  );
+  console.log(
+    `Mixed PR rejected: ${pluginPathFiles.length} plugin file(s) + ${nonPluginFiles.length} infra file(s).`,
+  );
+  routeOrFail();
   finish();
 }
 
