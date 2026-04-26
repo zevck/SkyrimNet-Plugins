@@ -1,21 +1,10 @@
 name: Build plugin index
 
-# Regenerates index.json from plugins/* + hidden.json. Cannot push to main
-# directly because github-actions[bot] is not in the ruleset bypass list
-# (and as a runtime identity, can't be added to the dropdown). Instead,
-# the workflow:
-#   1. pushes the rebuilt index.json to a fresh branch (no protection)
-#   2. opens a PR for that branch
-#   3. dispatches review-pipeline.yml against the PR via workflow_dispatch
-#      — validate tags it as `index-rebuild`, agent-review short-circuit-
-#      approves, auto-merge fires, the PR lands on main
-#
-# PRs opened with GITHUB_TOKEN don't fire pull_request events on
-# downstream workflows, which is why the review pipeline is dispatched
-# explicitly via workflow_dispatch here rather than relying on its
-# pull_request trigger to pick up the rebuild PR on its own.
-# (workflow_call would prefix check-run names with the calling job's
-# name, which wouldn't match the ruleset's required-status-check names.)
+# Regenerates index.json from plugins/* + hidden.json after any change
+# that affects what should appear in the index. Pushes the rebuilt file
+# directly to main using a token minted from a dedicated bot GitHub App
+# whose installation is in the ruleset's bypass list — so the push is
+# allowed even though main is protected.
 #
 # Triggers:
 #   - push to main when plugins/** or hidden.json changes — catches
@@ -24,6 +13,11 @@ name: Build plugin index
 #     submissions and deletions auto-merged by GITHUB_TOKEN, whose
 #     pushes to main do NOT fire `push` events on downstream workflows.
 #   - workflow_dispatch for manual rebuilds.
+#
+# Required secrets:
+#   BOT_APP_ID         — App ID of the bot App (Settings → Developer
+#                        settings → GitHub Apps → [your app] header).
+#   BOT_APP_PRIVATE_KEY — full PEM contents of the App's private key.
 
 on:
   push:
@@ -37,9 +31,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
-  pull-requests: write
-  actions: write   # needed to dispatch review-pipeline.yml against the rebuild PR
+  contents: read   # job-level token only reads; the bot App token is what writes
 
 concurrency:
   group: build-index
@@ -51,12 +43,22 @@ jobs:
     timeout-minutes: 10
 
     steps:
+      - name: Mint bot App installation token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_APP_PRIVATE_KEY }}
+
       - name: Checkout main
         uses: actions/checkout@v4
         with:
           ref: main
-          # Full history needed for git log date derivation in build-index.mjs
+          # Full history needed for git log date derivation in build-index.mjs.
           fetch-depth: 0
+          # Use the bot App's token for the local remote so `git push` later
+          # authenticates as the App (which is in the ruleset bypass list).
+          token: ${{ steps.app-token.outputs.token }}
 
       - name: Set up Node
         uses: actions/setup-node@v4
@@ -66,65 +68,28 @@ jobs:
       - name: Build index
         run: node .github/scripts/build-index.mjs
 
-      - name: Open rebuild PR if index changed
-        id: openpr
+      - name: Resolve bot user id
+        id: bot-user
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          # The bot App's noreply email is `<userId>+<slug>[bot]@users.noreply.github.com`
+          # — use that exactly so GitHub marks the resulting commits as
+          # Verified-by-this-App rather than unverified.
+          slug='${{ steps.app-token.outputs.app-slug }}'
+          user_id=$(gh api "/users/${slug}[bot]" --jq .id)
+          echo "slug=${slug}" >> "$GITHUB_OUTPUT"
+          echo "user-id=${user_id}" >> "$GITHUB_OUTPUT"
+
+      - name: Push rebuilt index to main
         run: |
           set -euo pipefail
           if git diff --quiet -- index.json; then
-            echo "index.json unchanged — nothing to do"
-            echo "pr_number=" >> "$GITHUB_OUTPUT"
+            echo "index.json unchanged — nothing to push"
             exit 0
           fi
-
-          BRANCH="index-rebuild/${GITHUB_RUN_ID}"
-          git config user.name  "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout -b "$BRANCH"
+          git config user.name  "${{ steps.bot-user.outputs.slug }}[bot]"
+          git config user.email "${{ steps.bot-user.outputs.user-id }}+${{ steps.bot-user.outputs.slug }}[bot]@users.noreply.github.com"
           git add index.json
           git commit -m "chore: rebuild index.json"
-          git push origin "$BRANCH"
-
-          BODY=$(cat <<EOF
-          Automated rebuild after a change to \`plugins/**\` or \`hidden.json\`.
-
-          Triggered by: \`${GITHUB_EVENT_NAME}\` (run id ${GITHUB_RUN_ID}).
-
-          The review pipeline is dispatched against this PR by the same
-          workflow run; it routes the PR as \`index-rebuild\`, agent-review
-          short-circuit-approves, and auto-merge lands it.
-          EOF
-          )
-          PR_URL=$(gh pr create \
-            --base main \
-            --head "$BRANCH" \
-            --title "chore: rebuild index.json" \
-            --body "$BODY")
-          PR_NUMBER=$(basename "$PR_URL")
-          echo "Opened PR #${PR_NUMBER}: ${PR_URL}"
-          echo "pr_number=${PR_NUMBER}" >> "$GITHUB_OUTPUT"
-          echo "branch=${BRANCH}" >> "$GITHUB_OUTPUT"
-
-      - name: Dispatch review pipeline against rebuild PR
-        if: steps.openpr.outputs.pr_number != ''
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_NUMBER:    ${{ steps.openpr.outputs.pr_number }}
-          BRANCH:       ${{ steps.openpr.outputs.branch }}
-        run: |
-          set -euo pipefail
-          # Dispatch on the rebuild branch (NOT main) so github.sha in the
-          # dispatched run equals the rebuild PR's head SHA. The auto-posted
-          # check runs (validate, agent-review) then attach to that SHA,
-          # which is what the PR's required-status-checks look at.
-          # Dispatching with --ref main would tie the check runs to main's
-          # tip and the PR would never see them.
-          #
-          # Safety: this branch was just created by us seconds ago and only
-          # changes index.json — .github/workflows/ files are unchanged
-          # from main, so the workflow file resolved is identical.
-          gh workflow run review-pipeline.yml \
-            --ref "$BRANCH" \
-            -f pr_number="$PR_NUMBER"
-          echo "Dispatched review-pipeline.yml against PR #$PR_NUMBER (ref: $BRANCH)"
+          git push origin HEAD:main

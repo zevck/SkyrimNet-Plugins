@@ -125,13 +125,6 @@ function finish() {
       result.manualReason ?? "This PR only modifies repository infrastructure.",
     );
   }
-  if (result.labels.includes("index-rebuild") && result.errors.length === 0) {
-    parts.push(
-      "### Automated index rebuild",
-      "",
-      result.manualReason ?? "This PR rebuilds index.json automatically.",
-    );
-  }
   if (parts.length > 0) {
     result.comment = parts.join("\n");
   }
@@ -257,28 +250,7 @@ try {
 // with a `ready-for-agent-review` label so agent-review → auto-merge still
 // runs; agent-review sees zero content files and auto-approves ("No content
 // files to review.").
-// Index-rebuild PR: opened by github-actions[bot] from build-index.yml,
-// touches only index.json. Routed to its own label so agent-review.mjs
-// short-circuit-APPROVES (no LLM call), letting auto-merge land it
-// without manual bypass. The author check is the gate — only the
-// runtime workflow identity can produce these PRs (the dashboard App
-// has no actions:write so it can't trigger build-index.yml). A user
-// hand-editing index.json is NOT routed here — they hit infra-only,
-// which fails and requires admin bypass, preventing accidental or
-// malicious in-place index edits from sliding through.
 const allFiles = [...changedFiles, ...deletedFiles];
-const isIndexRebuild =
-  env.PR_AUTHOR === "github-actions[bot]" &&
-  allFiles.length === 1 &&
-  allFiles[0] === "index.json";
-if (isIndexRebuild) {
-  result.labels.push("index-rebuild");
-  result.manualReason =
-    `Automated index.json rebuild by github-actions[bot]. ` +
-    `Agent review is short-circuited; auto-merge will land it.`;
-  console.log("Index-rebuild PR detected. Routing as index-rebuild.");
-  finish();
-}
 
 // Maintainer infra PR: every file the PR touches (added, modified, or
 // removed) lives OUTSIDE `plugins/`. Typical cases: editing hidden.json,
