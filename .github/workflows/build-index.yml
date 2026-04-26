@@ -104,18 +104,27 @@ jobs:
           PR_NUMBER=$(basename "$PR_URL")
           echo "Opened PR #${PR_NUMBER}: ${PR_URL}"
           echo "pr_number=${PR_NUMBER}" >> "$GITHUB_OUTPUT"
+          echo "branch=${BRANCH}" >> "$GITHUB_OUTPUT"
 
       - name: Dispatch review pipeline against rebuild PR
         if: steps.openpr.outputs.pr_number != ''
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER:    ${{ steps.openpr.outputs.pr_number }}
+          BRANCH:       ${{ steps.openpr.outputs.branch }}
         run: |
           set -euo pipefail
-          # Dispatch on main so the workflow file resolved is the trusted
-          # version. The review pipeline's setup job then looks up the
-          # rebuild PR by number and proceeds.
+          # Dispatch on the rebuild branch (NOT main) so github.sha in the
+          # dispatched run equals the rebuild PR's head SHA. The auto-posted
+          # check runs (validate, agent-review) then attach to that SHA,
+          # which is what the PR's required-status-checks look at.
+          # Dispatching with --ref main would tie the check runs to main's
+          # tip and the PR would never see them.
+          #
+          # Safety: this branch was just created by us seconds ago and only
+          # changes index.json — .github/workflows/ files are unchanged
+          # from main, so the workflow file resolved is identical.
           gh workflow run review-pipeline.yml \
-            --ref main \
+            --ref "$BRANCH" \
             -f pr_number="$PR_NUMBER"
-          echo "Dispatched review-pipeline.yml against PR #$PR_NUMBER"
+          echo "Dispatched review-pipeline.yml against PR #$PR_NUMBER (ref: $BRANCH)"
