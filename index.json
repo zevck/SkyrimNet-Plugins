@@ -1,7 +1,32 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-04-23T01:38:06.740Z",
+  "generated_at": "2026-04-26T04:08:10.086Z",
   "plugins": [
+    {
+      "id": "plugins/Zevick/stress-fear-integration",
+      "type": "bundle",
+      "title": "Stress & Fear Integration",
+      "tagline": "Adds integration with Stress & Fear",
+      "author": "Zevick",
+      "tags": [
+        "stress",
+        "fear",
+        "mod integration"
+      ],
+      "nsfw": true,
+      "icon": "scroll",
+      "mods": [],
+      "first_published": "2026-04-22T19:55:56Z\n2026-04-22T23:54:26Z\n2026-04-23T00:10:17Z\n2026-04-23T00:28:08Z\n2026-04-26T00:05:39Z",
+      "last_updated": "2026-04-26T00:05:39Z",
+      "version": "1.0.0",
+      "skyrimnet_version": "0.19.0",
+      "contents": {
+        "triggers": 0,
+        "actions": 0,
+        "prompts": 1,
+        "knowledge": 0
+      }
+    },
     {
       "id": "plugins/Zevick/simple-hunting-overhaul-integration",
       "type": "bundle",
@@ -111,38 +136,6 @@
         "triggers": 0,
         "actions": 0,
         "prompts": 0,
-        "knowledge": 1
-      }
-    },
-    {
-      "id": "plugins/vex/dark-brotherhood-personalities",
-      "type": "bundle",
-      "title": "Dark Brotherhood Personalities",
-      "tagline": "Distinct personalities and deep lore for every Dark Brotherhood member.",
-      "author": "vex",
-      "tags": [
-        "roleplay",
-        "npcs",
-        "dark brotherhood",
-        "lore"
-      ],
-      "nsfw": false,
-      "icon": "package",
-      "mods": [
-        {
-          "name": "Skyrim",
-          "file": "skyrim.esm",
-          "required": true
-        }
-      ],
-      "first_published": "2026-04-21T04:10:46-04:00",
-      "last_updated": "2026-04-21T04:10:46-04:00",
-      "version": "2.1.0",
-      "skyrimnet_version": "0-19-0-0",
-      "contents": {
-        "triggers": 1,
-        "actions": 0,
-        "prompts": 3,
         "knowledge": 1
       }
     }
