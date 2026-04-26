@@ -25,6 +25,7 @@ on:
     paths:
       - 'plugins/**'
       - 'hidden.json'
+      - 'curated.json'
   workflow_run:
     workflows: ['Plugin submission review pipeline']
     types: [completed]
