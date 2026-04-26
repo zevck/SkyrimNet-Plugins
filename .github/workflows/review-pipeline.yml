@@ -579,21 +579,53 @@ jobs:
               return;
             }
 
-            if (!pr.mergeable) {
+            // pr.mergeable is computed asynchronously after PR open: null
+            // means GitHub hasn't decided yet. Only `false` is a real
+            // conflict. For fast-path PRs (index-rebuild) auto-merge can
+            // fire before mergeability resolves; poll briefly so we don't
+            // bail out on still-computing PRs.
+            let mergeable = pr.mergeable;
+            for (let i = 0; mergeable === null && i < 6; i++) {
+              await new Promise(r => setTimeout(r, 2000));
+              const { data: again } = await github.rest.pulls.get({
+                owner, repo, pull_number: prNumber,
+              });
+              mergeable = again.mergeable;
+            }
+            if (mergeable === false) {
               core.setFailed('PR has merge conflicts. Author must rebase or resolve.');
               return;
             }
+            // mergeable === null after polling: try the merge anyway, the
+            // API will surface the real reason if there's a structural
+            // problem.
 
-            try {
-              await github.rest.pulls.merge({
-                owner, repo,
-                pull_number: pr.number,
-                sha: reviewedSha,
-                merge_method: 'squash',
-              });
-              core.info(`PR #${pr.number} merged.`);
-            } catch (e) {
-              core.setFailed(`Merge failed: ${e.message}`);
+            // Required status check propagation can lag the job-level
+            // conclusion by a few seconds. Retry the merge a handful of
+            // times before giving up so a transient "checks not yet
+            // satisfied" race doesn't kill a valid merge.
+            let merged = false;
+            let lastErr = null;
+            for (let i = 0; i < 5 && !merged; i++) {
+              try {
+                await github.rest.pulls.merge({
+                  owner, repo,
+                  pull_number: pr.number,
+                  sha: reviewedSha,
+                  merge_method: 'squash',
+                });
+                merged = true;
+                core.info(`PR #${pr.number} merged.`);
+              } catch (e) {
+                lastErr = e;
+                core.info(`Merge attempt ${i + 1} failed: ${e.message}`);
+                if (i < 4) {
+                  await new Promise(r => setTimeout(r, 3000));
+                }
+              }
+            }
+            if (!merged) {
+              core.setFailed(`Merge failed after retries: ${lastErr ? lastErr.message : 'unknown'}`);
               return;
             }
 
