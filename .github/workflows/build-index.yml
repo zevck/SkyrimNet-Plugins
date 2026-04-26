@@ -1,13 +1,18 @@
 name: Build plugin index
 
-# Regenerates index.json whenever a plugin is merged to main. Walks every
-# plugins/{author}/{slug}/manifest.json, extracts browse-page fields,
-# counts content files, derives dates from git history, and writes the
-# aggregate index.json. Commits the result back to main via the built-in
-# GITHUB_TOKEN.
+# Regenerates index.json from plugins/* + hidden.json. Cannot push to main
+# directly because github-actions[bot] is not in the ruleset bypass list
+# (and as a runtime identity, can't be added to the dropdown). Instead,
+# the workflow pushes to a fresh branch and opens a PR; an admin clicks
+# bypass-merge to land the rebuild.
 #
-# The index is the only data source the dashboard reads for the browse page.
-# Individual manifest.json files are fetched on-demand for detail views.
+# Triggers:
+#   - push to main when plugins/** or hidden.json changes — catches
+#     direct admin edits via the GitHub web UI.
+#   - workflow_run after the review pipeline completes — catches plugin
+#     submissions and deletions auto-merged by GITHUB_TOKEN, whose
+#     pushes to main do NOT fire `push` events on downstream workflows.
+#   - workflow_dispatch for manual rebuilds.
 
 on:
   push:
@@ -15,10 +20,14 @@ on:
     paths:
       - 'plugins/**'
       - 'hidden.json'
+  workflow_run:
+    workflows: ['Plugin submission review pipeline']
+    types: [completed]
   workflow_dispatch:
 
 permissions:
   contents: write
+  pull-requests: write
 
 concurrency:
   group: build-index
@@ -30,10 +39,11 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - name: Checkout
+      - name: Checkout main
         uses: actions/checkout@v4
         with:
-          # Full history needed for git log date derivation
+          ref: main
+          # Full history needed for git log date derivation in build-index.mjs
           fetch-depth: 0
 
       - name: Set up Node
@@ -44,14 +54,42 @@ jobs:
       - name: Build index
         run: node .github/scripts/build-index.mjs
 
-      - name: Commit index.json
+      - name: Open rebuild PR if index changed
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add index.json
-          if git diff --cached --quiet; then
-            echo "index.json unchanged — nothing to commit"
-          else
-            git commit -m "chore: rebuild index.json [skip ci]"
-            git push
+          set -euo pipefail
+          if git diff --quiet -- index.json; then
+            echo "index.json unchanged — nothing to do"
+            exit 0
           fi
+
+          # Fresh branch name keyed on the run id keeps PRs unique even when
+          # the workflow fires twice in quick succession.
+          BRANCH="index-rebuild/${GITHUB_RUN_ID}"
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add index.json
+          git commit -m "chore: rebuild index.json"
+          git push origin "$BRANCH"
+
+          # PR body via heredoc so YAML indentation stays out of the rendered
+          # markdown. Required checks (validate, agent-review) won't fire on
+          # this PR because it was opened by GITHUB_TOKEN — admin merges via
+          # bypass.
+          BODY=$(cat <<EOF
+          Automated rebuild after a change to \`plugins/**\` or \`hidden.json\`.
+
+          Triggered by: \`${GITHUB_EVENT_NAME}\` (run id ${GITHUB_RUN_ID}).
+
+          Required checks (\`validate\`, \`agent-review\`) won't fire on this PR
+          because it was opened by GITHUB_TOKEN. Click "Merge without waiting
+          for requirements" to land it.
+          EOF
+          )
+          gh pr create \
+            --base main \
+            --head "$BRANCH" \
+            --title "chore: rebuild index.json" \
+            --body "$BODY"
