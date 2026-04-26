@@ -132,6 +132,21 @@ async function main() {
     writeResultAndExit(0);
     return;
   }
+  if (route === "index-rebuild") {
+    // Automated index.json rebuild from build-index.yml. validate.mjs has
+    // already verified the PR was opened by github-actions[bot] and only
+    // touches index.json. There's no content to LLM-scan; we approve so
+    // auto-merge can land the rebuild without admin intervention.
+    result.success = true;
+    result.decision = "approve";
+    result.labels = ["agent-approved"];
+    result.comment =
+      "### Agent content review — skipped (index rebuild)\n\n" +
+      "Automated `index.json` rebuild by `github-actions[bot]`. " +
+      "Approved without scan; auto-merge will land it.";
+    writeResultAndExit(0);
+    return;
+  }
   if (route === "infra-only") {
     // Maintainer-edited config / workflow / docs PR. The agent has no
     // plugin content to scan, but we deliberately short-circuit-FAIL

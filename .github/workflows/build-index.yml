@@ -3,8 +3,19 @@ name: Build plugin index
 # Regenerates index.json from plugins/* + hidden.json. Cannot push to main
 # directly because github-actions[bot] is not in the ruleset bypass list
 # (and as a runtime identity, can't be added to the dropdown). Instead,
-# the workflow pushes to a fresh branch and opens a PR; an admin clicks
-# bypass-merge to land the rebuild.
+# the workflow:
+#   1. pushes the rebuilt index.json to a fresh branch (no protection)
+#   2. opens a PR for that branch
+#   3. dispatches review-pipeline.yml against the PR via workflow_dispatch
+#      — validate tags it as `index-rebuild`, agent-review short-circuit-
+#      approves, auto-merge fires, the PR lands on main
+#
+# PRs opened with GITHUB_TOKEN don't fire pull_request events on
+# downstream workflows, which is why the review pipeline is dispatched
+# explicitly via workflow_dispatch here rather than relying on its
+# pull_request trigger to pick up the rebuild PR on its own.
+# (workflow_call would prefix check-run names with the calling job's
+# name, which wouldn't match the ruleset's required-status-check names.)
 #
 # Triggers:
 #   - push to main when plugins/** or hidden.json changes — catches
@@ -28,6 +39,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  actions: write   # needed to dispatch review-pipeline.yml against the rebuild PR
 
 concurrency:
   group: build-index
@@ -55,17 +67,17 @@ jobs:
         run: node .github/scripts/build-index.mjs
 
       - name: Open rebuild PR if index changed
+        id: openpr
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           if git diff --quiet -- index.json; then
             echo "index.json unchanged — nothing to do"
+            echo "pr_number=" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
-          # Fresh branch name keyed on the run id keeps PRs unique even when
-          # the workflow fires twice in quick succession.
           BRANCH="index-rebuild/${GITHUB_RUN_ID}"
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -74,22 +86,36 @@ jobs:
           git commit -m "chore: rebuild index.json"
           git push origin "$BRANCH"
 
-          # PR body via heredoc so YAML indentation stays out of the rendered
-          # markdown. Required checks (validate, agent-review) won't fire on
-          # this PR because it was opened by GITHUB_TOKEN — admin merges via
-          # bypass.
           BODY=$(cat <<EOF
           Automated rebuild after a change to \`plugins/**\` or \`hidden.json\`.
 
           Triggered by: \`${GITHUB_EVENT_NAME}\` (run id ${GITHUB_RUN_ID}).
 
-          Required checks (\`validate\`, \`agent-review\`) won't fire on this PR
-          because it was opened by GITHUB_TOKEN. Click "Merge without waiting
-          for requirements" to land it.
+          The review pipeline is dispatched against this PR by the same
+          workflow run; it routes the PR as \`index-rebuild\`, agent-review
+          short-circuit-approves, and auto-merge lands it.
           EOF
           )
-          gh pr create \
+          PR_URL=$(gh pr create \
             --base main \
             --head "$BRANCH" \
             --title "chore: rebuild index.json" \
-            --body "$BODY"
+            --body "$BODY")
+          PR_NUMBER=$(basename "$PR_URL")
+          echo "Opened PR #${PR_NUMBER}: ${PR_URL}"
+          echo "pr_number=${PR_NUMBER}" >> "$GITHUB_OUTPUT"
+
+      - name: Dispatch review pipeline against rebuild PR
+        if: steps.openpr.outputs.pr_number != ''
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER:    ${{ steps.openpr.outputs.pr_number }}
+        run: |
+          set -euo pipefail
+          # Dispatch on main so the workflow file resolved is the trusted
+          # version. The review pipeline's setup job then looks up the
+          # rebuild PR by number and proceeds.
+          gh workflow run review-pipeline.yml \
+            --ref main \
+            -f pr_number="$PR_NUMBER"
+          echo "Dispatched review-pipeline.yml against PR #$PR_NUMBER"

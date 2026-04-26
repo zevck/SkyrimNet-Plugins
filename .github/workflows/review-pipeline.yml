@@ -21,6 +21,24 @@ on:
     # detected by validate.mjs as `infra-only` and short-circuit-
     # approved by agent-review.mjs without an LLM call. CODEOWNERS still
     # gates the actual merge, and auto-merge skips infra-only routes.
+  # Manual / programmatic entry point: lets another workflow (notably
+  # build-index.yml) drive the pipeline against a PR it just opened.
+  # PRs opened with GITHUB_TOKEN don't fire pull_request events on
+  # downstream workflows, so we expose this entry point as the workaround.
+  #
+  # workflow_dispatch (rather than workflow_call) is used deliberately:
+  # workflow_call jobs report check runs with the calling job's name as
+  # a prefix (e.g. `review / validate`), which wouldn't match the
+  # ruleset's required-status-check names. workflow_dispatch starts a
+  # top-level workflow run, so checks report as bare `validate` and
+  # `agent-review`. The setup job below resolves PR context the same
+  # way regardless of trigger.
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to review'
+        type: string
+        required: true
 
 permissions:
   contents: write        # auto-merge job writes to the repo
@@ -28,19 +46,63 @@ permissions:
   models: read           # agent-review uses GitHub Models
 
 concurrency:
-  group: review-pr-${{ github.event.pull_request.number }}
+  # Resolves to PR number on either trigger.
+  group: review-pr-${{ github.event.pull_request.number || inputs.pr_number }}
   cancel-in-progress: true
 
 jobs:
   # ---------------------------------------------------------------------------
+  # Stage 0 — resolve PR context (works for both pull_request and workflow_call)
+  #
+  # For the pull_request trigger we already have github.event.pull_request
+  # populated. For workflow_call we only have inputs.pr_number, so we look
+  # up the PR via the API. Either way, downstream jobs read from this job's
+  # outputs and don't touch github.event.pull_request directly.
+  # ---------------------------------------------------------------------------
+  setup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      pr_number: ${{ steps.ctx.outputs.pr_number }}
+      head_sha:  ${{ steps.ctx.outputs.head_sha }}
+      head_ref:  ${{ steps.ctx.outputs.head_ref }}
+      base_sha:  ${{ steps.ctx.outputs.base_sha }}
+      author:    ${{ steps.ctx.outputs.author }}
+      body:      ${{ steps.ctx.outputs.body }}
+
+    steps:
+      - name: Resolve PR context
+        id: ctx
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // pull_request trigger has the PR in the event payload;
+            // workflow_dispatch carries it through inputs.pr_number.
+            const isDispatch = context.eventName === 'workflow_dispatch';
+            const prNumber = isDispatch
+              ? Number(${{ toJSON(inputs.pr_number || '0') }})
+              : context.payload.pull_request.number;
+            if (!prNumber) {
+              core.setFailed('Could not determine PR number from event or inputs.');
+              return;
+            }
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber,
+            });
+            core.setOutput('pr_number', String(prNumber));
+            core.setOutput('head_sha',  pr.head.sha);
+            core.setOutput('head_ref',  pr.head.ref);
+            core.setOutput('base_sha',  pr.base.sha);
+            core.setOutput('author',    pr.user.login);
+            core.setOutput('body',      pr.body || '');
+
+  # ---------------------------------------------------------------------------
   # Stage 1 — structural validation
   # ---------------------------------------------------------------------------
   validate:
-    # Skip moderation PRs (branches opened by the Moderate workflow). They
-    # only touch hidden.json/curated.json/bans.json, which this pipeline
-    # would label 'manual-review' and do nothing else with. Skipping avoids
-    # GitHub's "workflow needs approval" gate on PRs opened by workflows.
-    if: ${{ !startsWith(github.head_ref, 'moderate/') }}
+    needs: setup
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
@@ -51,14 +113,14 @@ jobs:
       - name: Checkout base
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.base.sha }}
+          ref: ${{ needs.setup.outputs.base_sha }}
           path: base
           fetch-depth: 0
 
       - name: Checkout PR head (plugins only)
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ needs.setup.outputs.head_sha }}
           path: pr
           sparse-checkout: |
             plugins
@@ -77,12 +139,14 @@ jobs:
 
       - name: List PR changed files
         uses: actions/github-script@v7
+        env:
+          PR_NUMBER: ${{ needs.setup.outputs.pr_number }}
         with:
           script: |
             const files = await github.paginate(github.rest.pulls.listFiles, {
               owner: context.repo.owner,
               repo: context.repo.repo,
-              pull_number: context.payload.pull_request.number,
+              pull_number: Number(process.env.PR_NUMBER),
               per_page: 100,
             });
             // Emit "status\tfilename" per line so the validator can tell
@@ -97,9 +161,9 @@ jobs:
       - name: Run validation
         id: validate
         env:
-          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_AUTHOR: ${{ needs.setup.outputs.author }}
+          PR_NUMBER: ${{ needs.setup.outputs.pr_number }}
+          PR_BODY: ${{ needs.setup.outputs.body }}
           BASE_DIR: ${{ github.workspace }}/base
           PR_DIR: ${{ github.workspace }}/pr
           PR_FILES_FILE: ${{ github.workspace }}/pr-files.txt
@@ -110,6 +174,9 @@ jobs:
       - name: Apply labels and post comment
         if: always()
         uses: actions/github-script@v7
+        env:
+          PR_NUMBER: ${{ needs.setup.outputs.pr_number }}
+          HEAD_REF:  ${{ needs.setup.outputs.head_ref }}
         with:
           script: |
             const fs = require('fs');
@@ -119,7 +186,9 @@ jobs:
               return;
             }
             const result = JSON.parse(fs.readFileSync(resultPath, 'utf8'));
-            const pr = context.issue;
+            const owner = context.repo.owner;
+            const repo  = context.repo.repo;
+            const issueNumber = Number(process.env.PR_NUMBER);
 
             // All labels the whole pipeline (any job) can apply. Cleared at
             // validate stage so each run starts from a known state.
@@ -128,31 +197,32 @@ jobs:
               'ready-for-agent-review',
               'manual-review',
               'infra-only',
+              'index-rebuild',
               'agent-approved',
               'agent-rejected',
               'agent-uncertain',
             ]);
 
             const current = await github.rest.issues.listLabelsOnIssue({
-              owner: pr.owner, repo: pr.repo, issue_number: pr.number,
+              owner, repo, issue_number: issueNumber,
             });
             const toRemove = current.data
               .map(l => l.name)
               .filter(n => ourLabels.has(n) && !result.labels.includes(n));
             for (const name of toRemove) {
               await github.rest.issues.removeLabel({
-                owner: pr.owner, repo: pr.repo, issue_number: pr.number, name,
+                owner, repo, issue_number: issueNumber, name,
               });
             }
             if (result.labels.length > 0) {
               await github.rest.issues.addLabels({
-                owner: pr.owner, repo: pr.repo, issue_number: pr.number,
+                owner, repo, issue_number: issueNumber,
                 labels: result.labels,
               });
             }
             if (result.comment) {
               await github.rest.issues.createComment({
-                owner: pr.owner, repo: pr.repo, issue_number: pr.number,
+                owner, repo, issue_number: issueNumber,
                 body: result.comment,
               });
             }
@@ -165,13 +235,12 @@ jobs:
             // rather than push to this one.
             if (result.labels.includes('validation-failed')) {
               await github.rest.pulls.update({
-                owner: pr.owner, repo: pr.repo, pull_number: pr.number,
-                state: 'closed',
+                owner, repo, pull_number: issueNumber, state: 'closed',
               });
               try {
                 await github.rest.git.deleteRef({
-                  owner: pr.owner, repo: pr.repo,
-                  ref: `heads/${context.payload.pull_request.head.ref}`,
+                  owner, repo,
+                  ref: `heads/${process.env.HEAD_REF}`,
                 });
               } catch (e) {
                 core.info(`Could not delete rejected head branch: ${e.message}`);
@@ -187,6 +256,7 @@ jobs:
         uses: actions/github-script@v7
         env:
           PR_DIR: ${{ github.workspace }}/pr
+          PR_NUMBER: ${{ needs.setup.outputs.pr_number }}
         with:
           script: |
             const fs = require('fs');
@@ -243,9 +313,11 @@ jobs:
             lines.push('<!-- invocation-summary:end -->');
             const block = lines.join('\n');
 
-            const pr = context.issue;
+            const owner = context.repo.owner;
+            const repo  = context.repo.repo;
+            const prNumber = Number(process.env.PR_NUMBER);
             const { data: prData } = await github.rest.pulls.get({
-              owner: pr.owner, repo: pr.repo, pull_number: pr.number,
+              owner, repo, pull_number: prNumber,
             });
             const existing = prData.body || '';
             const re = /<!-- invocation-summary:start -->[\s\S]*?<!-- invocation-summary:end -->/;
@@ -254,8 +326,7 @@ jobs:
               : (existing.trim() ? `${existing.trim()}\n\n${block}\n` : `${block}\n`);
             if (nextBody !== existing) {
               await github.rest.pulls.update({
-                owner: pr.owner, repo: pr.repo, pull_number: pr.number,
-                body: nextBody,
+                owner, repo, pull_number: prNumber, body: nextBody,
               });
             }
 
@@ -277,6 +348,7 @@ jobs:
           if [ "$success" = "true" ]; then
             case ",$labels," in
               *,deletion,*)               route="deletion" ;;
+              *,index-rebuild,*)          route="index-rebuild" ;;
               *,ready-for-agent-review,*) route="ready-for-agent-review" ;;
               *,infra-only,*)             route="infra-only" ;;
               *,manual-review,*)          route="manual-review" ;;
@@ -296,11 +368,12 @@ jobs:
   agent-review:
     # Always runs (no `if:` gate). The job branches internally on the
     # validate-emitted route: real LLM scan for ready-for-agent-review,
-    # short-circuit pass for deletion, short-circuit fail for everything
-    # else. This makes the agent-review job's success/failure status
-    # usable as a required-status-check merge gate — passes only when the
-    # PR should auto-merge, fails when it should wait for a human.
-    needs: validate
+    # short-circuit pass for deletion / index-rebuild, short-circuit fail
+    # for everything else. This makes the agent-review job's success /
+    # failure status usable as a required-status-check merge gate —
+    # passes only when the PR should auto-merge, fails when it should
+    # wait for a human.
+    needs: [setup, validate]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     outputs:
@@ -310,14 +383,14 @@ jobs:
       - name: Checkout base
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.base.sha }}
+          ref: ${{ needs.setup.outputs.base_sha }}
           path: base
           fetch-depth: 1
 
       - name: Checkout PR head (plugins only)
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ needs.setup.outputs.head_sha }}
           path: pr
           sparse-checkout: |
             plugins
@@ -341,6 +414,7 @@ jobs:
           # Route from validate stage. The script branches on this:
           #   ready-for-agent-review -> real LLM scan
           #   deletion               -> short-circuit approve (no LLM call)
+          #   index-rebuild          -> short-circuit approve (build-index PR)
           #   anything else          -> short-circuit uncertain (gate fails)
           ROUTE: ${{ needs.validate.outputs.route }}
           RESULT_FILE: ${{ github.workspace }}/agent-review-result.json
@@ -357,6 +431,9 @@ jobs:
       - name: Apply labels and post comment
         if: always()
         uses: actions/github-script@v7
+        env:
+          PR_NUMBER: ${{ needs.setup.outputs.pr_number }}
+          HEAD_REF:  ${{ needs.setup.outputs.head_ref }}
         with:
           script: |
             const fs = require('fs');
@@ -366,7 +443,9 @@ jobs:
               return;
             }
             const result = JSON.parse(fs.readFileSync(resultPath, 'utf8'));
-            const pr = context.issue;
+            const owner = context.repo.owner;
+            const repo  = context.repo.repo;
+            const issueNumber = Number(process.env.PR_NUMBER);
 
             const ourLabels = new Set([
               'agent-approved',
@@ -374,25 +453,25 @@ jobs:
               'agent-uncertain',
             ]);
             const current = await github.rest.issues.listLabelsOnIssue({
-              owner: pr.owner, repo: pr.repo, issue_number: pr.number,
+              owner, repo, issue_number: issueNumber,
             });
             const toRemove = current.data
               .map(l => l.name)
               .filter(n => ourLabels.has(n) && !result.labels.includes(n));
             for (const name of toRemove) {
               await github.rest.issues.removeLabel({
-                owner: pr.owner, repo: pr.repo, issue_number: pr.number, name,
+                owner, repo, issue_number: issueNumber, name,
               });
             }
             if (result.labels.length > 0) {
               await github.rest.issues.addLabels({
-                owner: pr.owner, repo: pr.repo, issue_number: pr.number,
+                owner, repo, issue_number: issueNumber,
                 labels: result.labels,
               });
             }
             if (result.comment) {
               await github.rest.issues.createComment({
-                owner: pr.owner, repo: pr.repo, issue_number: pr.number,
+                owner, repo, issue_number: issueNumber,
                 body: result.comment,
               });
             }
@@ -405,13 +484,12 @@ jobs:
             // auto-closed here.
             if (result.labels.includes('agent-rejected')) {
               await github.rest.pulls.update({
-                owner: pr.owner, repo: pr.repo, pull_number: pr.number,
-                state: 'closed',
+                owner, repo, pull_number: issueNumber, state: 'closed',
               });
               try {
                 await github.rest.git.deleteRef({
-                  owner: pr.owner, repo: pr.repo,
-                  ref: `heads/${context.payload.pull_request.head.ref}`,
+                  owner, repo,
+                  ref: `heads/${process.env.HEAD_REF}`,
                 });
               } catch (e) {
                 core.info(`Could not delete rejected head branch: ${e.message}`);
@@ -453,12 +531,13 @@ jobs:
   # Stage 3 — auto-merge
   # ---------------------------------------------------------------------------
   auto-merge:
-    needs: [validate, agent-review]
+    needs: [setup, validate, agent-review]
     # agent-review is the single gate. It approves only on routes the bot
     # can ship on its own (ready-for-agent-review with a passing LLM scan,
-    # or deletion takedowns). It short-circuit-fails everything else,
-    # including infra-only PRs — those are merged by a repo admin via
-    # the bypass button, never by the bot.
+    # deletion takedowns, or index-rebuild PRs from build-index.yml). It
+    # short-circuit-fails everything else, including infra-only PRs —
+    # those are merged by a repo admin via the bypass button, never by
+    # the bot.
     if: needs.agent-review.result == 'success' && needs.agent-review.outputs.decision == 'agent-approved'
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -466,12 +545,18 @@ jobs:
     steps:
       - name: Verify PR is mergeable and merge
         uses: actions/github-script@v7
+        env:
+          PR_NUMBER:        ${{ needs.setup.outputs.pr_number }}
+          REVIEWED_HEAD_SHA: ${{ needs.setup.outputs.head_sha }}
         with:
           script: |
+            const owner = context.repo.owner;
+            const repo  = context.repo.repo;
+            const prNumber = Number(process.env.PR_NUMBER);
+            const reviewedSha = process.env.REVIEWED_HEAD_SHA;
+
             const { data: pr } = await github.rest.pulls.get({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: context.issue.number,
+              owner, repo, pull_number: prNumber,
             });
 
             if (pr.merged) {
@@ -486,11 +571,10 @@ jobs:
             // Head SHA must match what was reviewed — if the author pushed
             // new commits, the pipeline restarts on the new HEAD so that
             // run will make the merge decision.
-            const eventSha = '${{ github.event.pull_request.head.sha }}';
-            if (pr.head.sha !== eventSha) {
+            if (pr.head.sha !== reviewedSha) {
               core.setFailed(
                 `PR HEAD has changed since approval. ` +
-                `Reviewed: ${eventSha.slice(0, 7)}, current: ${pr.head.sha.slice(0, 7)}.`,
+                `Reviewed: ${reviewedSha.slice(0, 7)}, current: ${pr.head.sha.slice(0, 7)}.`,
               );
               return;
             }
@@ -502,10 +586,9 @@ jobs:
 
             try {
               await github.rest.pulls.merge({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
+                owner, repo,
                 pull_number: pr.number,
-                sha: eventSha,
+                sha: reviewedSha,
                 merge_method: 'squash',
               });
               core.info(`PR #${pr.number} merged.`);
@@ -521,8 +604,7 @@ jobs:
             // the branch is already gone or on a fork, we just log.
             try {
               await github.rest.git.deleteRef({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
+                owner, repo,
                 ref: `heads/${pr.head.ref}`,
               });
               core.info(`Deleted head branch '${pr.head.ref}'.`);
