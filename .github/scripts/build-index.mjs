@@ -57,23 +57,32 @@ function countFiles(dir) {
 
 // Map<pluginId, { reason, hidden_at, moderator? }> — full entry preserved
 // so the dashboard can show the reason on the author's profile view.
+//
+// Parse errors on either moderation file are treated as hard failures:
+// the dashboard relies on these to filter the browse view (hidden) and
+// to show the curated star, and silently dropping the data because of a
+// missing comma corrupts the index in ways that aren't obvious until a
+// moderator notices something missing. Fail loudly so the workflow run
+// goes red and the underlying JSON gets fixed.
 const hiddenById = new Map();
 if (fs.existsSync(HIDDEN_PATH)) {
+  let hidden;
   try {
-    const hidden = JSON.parse(fs.readFileSync(HIDDEN_PATH, "utf8"));
-    if (Array.isArray(hidden.hidden)) {
-      for (const h of hidden.hidden) {
-        if (h && typeof h.id === "string") {
-          hiddenById.set(h.id, {
-            reason: h.reason ?? null,
-            hidden_at: h.hidden_at ?? null,
-            moderator: h.moderator ?? null,
-          });
-        }
+    hidden = JSON.parse(fs.readFileSync(HIDDEN_PATH, "utf8"));
+  } catch (e) {
+    console.error(`Failed to parse hidden.json: ${e.message}`);
+    process.exit(1);
+  }
+  if (Array.isArray(hidden.hidden)) {
+    for (const h of hidden.hidden) {
+      if (h && typeof h.id === "string") {
+        hiddenById.set(h.id, {
+          reason: h.reason ?? null,
+          hidden_at: h.hidden_at ?? null,
+          moderator: h.moderator ?? null,
+        });
       }
     }
-  } catch (e) {
-    console.warn(`Warning: could not parse hidden.json: ${e.message}`);
   }
 }
 
@@ -81,16 +90,18 @@ if (fs.existsSync(HIDDEN_PATH)) {
 // when more fields land.
 const curatedIds = new Set();
 if (fs.existsSync(CURATED_PATH)) {
+  let curated;
   try {
-    const curated = JSON.parse(fs.readFileSync(CURATED_PATH, "utf8"));
-    if (Array.isArray(curated.curated)) {
-      for (const c of curated.curated) {
-        const id = typeof c === "string" ? c : c?.id;
-        if (typeof id === "string") curatedIds.add(id);
-      }
-    }
+    curated = JSON.parse(fs.readFileSync(CURATED_PATH, "utf8"));
   } catch (e) {
-    console.warn(`Warning: could not parse curated.json: ${e.message}`);
+    console.error(`Failed to parse curated.json: ${e.message}`);
+    process.exit(1);
+  }
+  if (Array.isArray(curated.curated)) {
+    for (const c of curated.curated) {
+      const id = typeof c === "string" ? c : c?.id;
+      if (typeof id === "string") curatedIds.add(id);
+    }
   }
 }
 

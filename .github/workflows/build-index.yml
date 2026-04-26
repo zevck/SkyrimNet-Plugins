@@ -92,5 +92,10 @@ jobs:
           git config user.name  "${{ steps.bot-user.outputs.slug }}[bot]"
           git config user.email "${{ steps.bot-user.outputs.user-id }}+${{ steps.bot-user.outputs.slug }}[bot]@users.noreply.github.com"
           git add index.json
-          git commit -m "chore: rebuild index.json"
+          # [skip ci] is defensive — the file-path filter on this
+          # workflow's `push` trigger already excludes index.json, so the
+          # rebuild commit wouldn't re-fire build-index even without it,
+          # but the marker prevents unrelated future workflows that might
+          # listen on broader paths from looping back here.
+          git commit -m "chore: rebuild index.json [skip ci]"
           git push origin HEAD:main
